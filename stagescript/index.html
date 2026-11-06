@@ -1,0 +1,52 @@
+<!DOCTYPE html>
+<html lang="en-AU">
+<head>
+  <meta charset="utf-8">
+  <title>Stagescript</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
+  <meta name="description" content="Stagescript: a digital prompt book for calling a show.">
+  <meta name="theme-color" content="#0d0d0d">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-title" content="Stagescript">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black">
+  <meta property="og:title" content="Stagescript">
+  <meta property="og:image" content="icon-512.png">
+  <link rel="apple-touch-icon" href="icon-180.png">
+  <link rel="icon" type="image/png" href="icon-192.png">
+  <link rel="manifest" href="manifest.webmanifest">
+  <style>
+    html, body { margin: 0; height: 100%; background: #0d0d0d; overflow: hidden; }
+    /* The notch and the home indicator are kept clear here, so the app inside
+       never has to think about them. */
+    body { padding: env(safe-area-inset-top) env(safe-area-inset-right) env(safe-area-inset-bottom) env(safe-area-inset-left);
+           box-sizing: border-box; }
+    iframe { display: block; width: 100%; height: 100%; border: 0; }
+    #nourl { display: none; color: #ddd; font: 15px/1.6 system-ui, sans-serif; padding: 28px; max-width: 32em; margin: auto; }
+    #nourl code { background: #1d1d1d; padding: 2px 5px; border-radius: 4px; font-size: 13px; word-break: break-all; }
+  </style>
+</head>
+<body>
+  <!-- Home screen wrapper. An iPhone takes its icon from the page you are on
+       when you tap Add to Home Screen, and an Apps Script page belongs to
+       Google, so it gives you a plain grey letter. This page shows the app
+       full screen under Stagescript's own name and icon. -->
+  <iframe id="app" title="Stagescript" allow="clipboard-write; web-share; fullscreen; screen-wake-lock"></iframe>
+  <div id="nourl">
+    <p><b>Stagescript isn’t pointed at a web app yet.</b></p>
+    <p>Put the deployed web app link into <code>APP</code> in this page’s source
+       (<code>home/index.html</code>), then copy the folder to the
+       <code>bengerberr.github.io</code> repo.</p>
+  </div>
+  <script>
+    // The deployed web app link (…/macros/s/…/exec).
+    var APP = 'PASTE_THE_WEB_APP_URL_HERE';
+    if (APP.indexOf('script.google.com') === -1) {
+      document.getElementById('app').style.display = 'none';
+      document.getElementById('nourl').style.display = 'block';
+    } else {
+      document.getElementById('app').src = APP + location.search;
+    }
+  </script>
+</body>
+</html>
