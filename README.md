@@ -5,6 +5,7 @@ Home screen pages for Ben's Apps Script web apps. iPhones take the icon and name
 | Page | App |
 |---|---|
 | [/emperor-scum/](https://bengerberr.github.io/emperor-scum/) | Emperor Scum card game |
+| [/gerber-pay/](https://bengerberr.github.io/gerber-pay/) | Gerber Pay (private: the app link is never stored here) |
 | [/stagescript/](https://bengerberr.github.io/stagescript/) | Stagescript prompt book |
 
 The source for each page lives with its app in the private `apps` repo (`<app>/home/`) and is copied here.

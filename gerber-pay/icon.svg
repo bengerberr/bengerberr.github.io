@@ -1,0 +1,42 @@
+<!-- Gerber Pay app icon: a ledger page in the app's green, cream and gold,
+     with a gold dollar coin. The source for icon-180/192/512.png:
+       for s in 180 192 512; do rsvg-convert -w $s -h $s icon.svg -o icon-$s.png; done -->
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" width="512" height="512">
+  <defs>
+    <linearGradient id="bg" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#2f5a46"/>
+      <stop offset="1" stop-color="#15291f"/>
+    </linearGradient>
+    <linearGradient id="paper" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#fdfbf5"/>
+      <stop offset="1" stop-color="#efe9d8"/>
+    </linearGradient>
+    <linearGradient id="coin" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#e2c682"/>
+      <stop offset="1" stop-color="#a9862f"/>
+    </linearGradient>
+  </defs>
+
+  <!-- Full bleed: iOS rounds the corners itself. -->
+  <rect width="512" height="512" fill="url(#bg)"/>
+
+  <!-- Ledger page, kept inside the middle so no mask clips it -->
+  <rect x="120" y="92" width="272" height="328" rx="20" fill="#0f2018" opacity="0.35" transform="translate(6 10)"/>
+  <rect x="120" y="92" width="272" height="328" rx="20" fill="url(#paper)"/>
+  <!-- Ruled lines and the margin -->
+  <g stroke="#d9d2bf" stroke-width="5" stroke-linecap="round">
+    <line x1="150" y1="156" x2="362" y2="156"/>
+    <line x1="150" y1="196" x2="362" y2="196"/>
+    <line x1="150" y1="356" x2="362" y2="356"/>
+    <line x1="150" y1="384" x2="300" y2="384"/>
+  </g>
+  <line x1="150" y1="126" x2="362" y2="126" stroke="#a9862f" stroke-width="7" stroke-linecap="round"/>
+
+  <!-- Gold coin with the dollar sign -->
+  <circle cx="256" cy="276" r="84" fill="#1f3a2e"/>
+  <circle cx="256" cy="276" r="76" fill="url(#coin)"/>
+  <circle cx="256" cy="276" r="63" fill="none" stroke="#fdf3d6" stroke-opacity="0.55" stroke-width="3"/>
+  <text x="256" y="317" text-anchor="middle"
+        font-family="Caladea, 'Bitstream Charter', 'DejaVu Serif', Georgia, serif" font-weight="700"
+        font-size="118" fill="#1f3a2e">$</text>
+</svg>
