@@ -19,14 +19,67 @@
     html, body { margin: 0; height: 100%; background: #08160f; overflow: hidden; }
     body { padding: env(safe-area-inset-top) env(safe-area-inset-right) env(safe-area-inset-bottom) env(safe-area-inset-left); box-sizing: border-box; }
     iframe { display: block; width: 100%; height: 100%; border: 0; }
+    .ov { position: fixed; inset: 0; background: rgba(0, 0, 0, .6); display: grid; place-items: center; z-index: 10; font-family: system-ui, sans-serif; }
+    .ov[hidden] { display: none; }
+    .ov .card { width: min(88vw, 340px); background: #102a1d; color: #f6f0e1; border: 1px solid rgba(246, 240, 225, .16); border-radius: 22px; padding: 22px 20px; text-align: center; box-shadow: 0 20px 50px rgba(0, 0, 0, .5); }
+    .ov .t { font: 800 22px Georgia, serif; margin-bottom: 6px; }
+    .ov p { color: #b9c7bd; font-size: 14px; line-height: 1.4; margin: 0 0 16px; }
+    .ov #gbtn { display: flex; justify-content: center; min-height: 44px; }
+    .ov button { margin-top: 14px; background: none; border: 0; color: #f6d98a; font: 600 15px system-ui, sans-serif; padding: 8px; }
   </style>
+  <script src="https://accounts.google.com/gsi/client" async></script>
 </head>
 <body>
   <!-- Home screen wrapper: gives the Apps Script game a proper icon and name when added to a phone's home screen. -->
   <iframe id="game" title="Card Club" allow="clipboard-write; web-share"></iframe>
+  <div class="ov" id="signin" hidden>
+    <div class="card">
+      <div class="t">Sign in to Card Club</div>
+      <p>Keeps your name, stats and friends on any phone. Your email is never shown to other players.</p>
+      <div id="gbtn"></div>
+      <button id="cancel" type="button">Not now</button>
+    </div>
+  </div>
   <script>
     var APP = 'https://script.google.com/macros/s/AKfycbyd-Bh29WBTDi5KtLD0_uA5WgsK5NEROBVGs0EWlq575L4QbRX-dkbGUFPLNYSkLzq7/exec';
     document.getElementById('game').src = APP + location.search;
+
+    // Google sign-in. The game (inside Google's frames) asks for it, we show Google's button
+    // here on our own page, then hand the result straight back to the game.
+    var FROM = /^https:\/\/([a-z0-9-]+\.)*googleusercontent\.com$/;
+    var app = null, appOrigin = '';
+    var ov = document.getElementById('signin');
+    document.getElementById('cancel').onclick = function () { ov.hidden = true; };
+    function whenGoogle(fn, tries) {
+      if (window.google && google.accounts && google.accounts.id) return fn();
+      if ((tries || 0) > 100) return;
+      setTimeout(function () { whenGoogle(fn, (tries || 0) + 1); }, 100);
+    }
+    function openSignIn(clientId) {
+      ov.hidden = false;
+      whenGoogle(function () {
+        google.accounts.id.initialize({
+          client_id: clientId,
+          callback: function (r) {
+            ov.hidden = true;
+            if (app && r.credential) app.postMessage({ type: 'cc-cred', credential: r.credential }, appOrigin);
+          },
+          auto_select: true, itp_support: true, use_fedcm_for_prompt: true
+        });
+        var el = document.getElementById('gbtn');
+        el.innerHTML = '';
+        google.accounts.id.renderButton(el, { theme: 'outline', size: 'large', shape: 'pill', text: 'signin_with', width: 260 });
+        google.accounts.id.prompt();
+      });
+    }
+    window.addEventListener('message', function (e) {
+      if (!FROM.test(e.origin)) return;
+      var d = e.data || {};
+      app = e.source; appOrigin = e.origin;
+      if (d.type === 'cc-hello') app.postMessage({ type: 'cc-wrapper' }, appOrigin);
+      if (d.type === 'cc-signin' && d.clientId) openSignIn(d.clientId);
+      if (d.type === 'cc-signout') whenGoogle(function () { google.accounts.id.disableAutoSelect(); });
+    });
   </script>
 </body>
 </html>
