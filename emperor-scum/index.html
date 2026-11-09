@@ -4,7 +4,7 @@
   <meta charset="utf-8">
   <title>Card Club</title>
   <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, viewport-fit=cover">
-  <meta name="description" content="Card Club: Emperor Scum and Golf, live with friends.">
+  <meta name="description" content="Card Club: Emperor Scum, Golf, Yaniv and 500, live with friends.">
   <meta name="theme-color" content="#08160f">
   <meta name="apple-mobile-web-app-capable" content="yes">
   <meta name="mobile-web-app-capable" content="yes">
@@ -46,6 +46,11 @@
 
     // Google sign-in. The game (inside Google's frames) asks for it, we show Google's button
     // here on our own page, then hand the result straight back to the game.
+    // Remembers your sign-in on this page, which (unlike the game's frame) keeps its storage.
+    var keep = {
+      get: function (k) { try { return localStorage.getItem(k) || ''; } catch (e) { return ''; } },
+      set: function (k, v) { try { if (v) localStorage.setItem(k, v); else localStorage.removeItem(k); } catch (e) { } }
+    };
     var FROM = /^https:\/\/([a-z0-9-]+\.)*googleusercontent\.com$/;
     var app = null, appOrigin = '';
     var ov = document.getElementById('signin');
@@ -76,9 +81,10 @@
       if (!FROM.test(e.origin)) return;
       var d = e.data || {};
       app = e.source; appOrigin = e.origin;
-      if (d.type === 'cc-hello') app.postMessage({ type: 'cc-wrapper' }, appOrigin);
+      if (d.type === 'cc-hello') app.postMessage({ type: 'cc-wrapper', session: keep.get('cc_session'), pid: keep.get('cc_pid') }, appOrigin);
+      if (d.type === 'cc-keep') { keep.set('cc_session', d.session || ''); if (d.pid) keep.set('cc_pid', d.pid); }
       if (d.type === 'cc-signin' && d.clientId) openSignIn(d.clientId);
-      if (d.type === 'cc-signout') whenGoogle(function () { google.accounts.id.disableAutoSelect(); });
+      if (d.type === 'cc-signout') { keep.set('cc_session', ''); whenGoogle(function () { google.accounts.id.disableAutoSelect(); }); }
     });
   </script>
 </body>
