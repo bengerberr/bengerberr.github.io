@@ -66,8 +66,16 @@
   .add { display: none; }
   body.editing .add { display: flex; }
   .foot { text-align: center; color: var(--muted); font-size: 12px; margin-top: 8px; }
-  .hidden-list { display: none; }
-  body.editing .hidden-list { display: block; }
+  /* Archive: games you're done with for now, tucked away at the bottom. */
+  .archive-head { width: 100%; display: flex; align-items: center; justify-content: space-between; padding: 14px 16px;
+    background: var(--card); border: 1px solid var(--line); border-radius: 18px; font-weight: 600; font-size: 15px; }
+  .archive-head .count { color: var(--muted); font-weight: 500; font-size: 14px; display: flex; align-items: center; gap: 8px; }
+  .archive-head .chev { transition: transform .2s; display: inline-block; }
+  #archiveWrap.open .chev { transform: rotate(90deg); }
+  #archiveGrid { display: none; margin-top: 10px; }
+  #archiveWrap.open #archiveGrid { display: grid; }
+  #archiveGrid .ic { filter: saturate(.55) brightness(.85); }
+  #archiveGrid .add { display: none !important; }
 
   /* ---------- App frames ---------- */
   #frames { position: fixed; inset: 0; background: var(--bg); visibility: hidden; opacity: 0; transition: opacity .22s; }
@@ -125,7 +133,7 @@
   </header>
   <div class="recent" id="recent"></div>
   <div id="sections"></div>
-  <section class="hidden-list" id="hiddenWrap"><h2>Hidden</h2><div class="grid" id="hiddenGrid"></div></section>
+  <section id="archiveWrap"><button class="archive-head" id="archiveHead"><span>🗄️&nbsp; Archive</span><span class="count"><span id="archiveCount"></span><span class="chev">›</span></span></button><div class="grid" id="archiveGrid"></div></section>
   <div class="foot" id="foot"></div>
 </div>
 
@@ -204,17 +212,19 @@
     });
     $('sections').innerHTML = html;
 
-    var hid = list.filter(function (a) { return state.hidden.indexOf(a.id) >= 0; });
-    $('hiddenGrid').innerHTML = hid.map(tileHTML).join('');
-    $('hiddenWrap').style.display = hid.length ? '' : 'none';
+    var arc = list.filter(function (a) { return state.hidden.indexOf(a.id) >= 0; });
+    $('archiveGrid').innerHTML = arc.map(tileHTML).join('');
+    $('archiveCount').textContent = arc.length + (arc.length === 1 ? ' app' : ' apps');
+    $('archiveWrap').style.display = arc.length ? '' : 'none';
+    $('archiveWrap').classList.toggle('open', !!state.archiveOpen);
 
-    $('recent').innerHTML = state.recent.map(find).filter(Boolean).slice(0, 5).map(function (a) {
+    $('recent').innerHTML = state.recent.map(find).filter(function (a) { return a && state.hidden.indexOf(a.id) < 0; }).slice(0, 5).map(function (a) {
       return '<button class="pill" data-id="' + esc(a.id) + '">' + iconHTML(a) + esc(a.name) + '</button>';
     }).join('');
 
     var h = new Date().getHours();
     $('hello').textContent = (h < 12 ? 'Good morning' : h < 17 ? 'Good afternoon' : 'Good evening') + ', Ben';
-    $('foot').textContent = document.body.classList.contains('editing') ? 'Tap an app to change it. Changes stay on this phone.' : '';
+    $('foot').textContent = document.body.classList.contains('editing') ? 'Tap an app to rename, archive or change it. Changes stay on this phone.' : '';
   }
 
   // ---- opening apps ----
@@ -275,6 +285,7 @@
     if (document.body.classList.contains('editing')) editSheet(a);
     else openApp(a.id);
   });
+  $('archiveHead').onclick = function () { state.archiveOpen = !state.archiveOpen; save(); render(); };
   $('editBtn').onclick = function () {
     var on = document.body.classList.toggle('editing');
     this.textContent = on ? 'Done' : 'Edit';
@@ -347,7 +358,7 @@
       '<div><label>Opens</label><select id="fOpen"><option value="hub">In Gerber\'s Games</option><option value="safari">In Safari</option><option value="app">In another app</option></select></div></div>' +
       (a.icon ? '' : '<label>Icon</label><div class="colours" id="fEmoji">' + EMOJIS.map(function (em) { return '<button class="sw' + (em === pick.emoji ? ' on' : '') + '" data-e="' + em + '" style="background:rgba(255,255,255,.06);font-size:18px">' + em + '</button>'; }).join('') + '</div>' +
         '<label>Colour</label><div class="colours" id="fCol">' + Object.keys(COLOURS).map(function (c) { return '<button class="sw' + (c === pick.colour ? ' on' : '') + '" data-c="' + c + '" style="background:linear-gradient(160deg,' + COLOURS[c][0] + ',' + COLOURS[c][1] + ')"></button>'; }).join('') + '</div>') +
-      '<div class="actions">' + (isNew ? '' : '<button class="btn danger" id="fDel">' + (a.custom ? 'Delete' : hidden ? 'Show' : 'Hide') + '</button>') +
+      '<div class="actions">' + (isNew ? '' : '<button class="btn" id="fArc">' + (hidden ? 'Unarchive' : 'Archive') + '</button>' + (a.custom ? '<button class="btn danger" id="fDel">Delete</button>' : '')) +
       '<button class="btn" id="fCancel">Cancel</button><button class="btn primary" id="fSave">' + (needLink ? 'Save & open' : 'Save') + '</button></div>';
     $('fOpen').value = a.open || 'hub';
 
@@ -355,10 +366,15 @@
     $('sheet').querySelectorAll('[data-c]').forEach(function (el) { el.onclick = function () { pick.colour = el.dataset.c; $('sheet').querySelectorAll('[data-c]').forEach(function (x) { x.classList.toggle('on', x === el); }); }; });
     $('fSec').onchange = function () { if (this.value === '__new') { var n = prompt('Section name'); if (n) { var o = document.createElement('option'); o.textContent = n; this.insertBefore(o, this.lastChild); this.value = n; } else this.value = a.section; } };
     $('fCancel').onclick = closeSheet;
-    if ($('fDel')) $('fDel').onclick = function () {
-      if (a.custom) { if (!confirm('Delete ' + a.name + '?')) return; state.custom = state.custom.filter(function (c) { return c.id !== a.id; }); }
-      else if (hidden) state.hidden = state.hidden.filter(function (h) { return h !== a.id; });
+    if ($('fArc')) $('fArc').onclick = function () {
+      if (hidden) state.hidden = state.hidden.filter(function (h) { return h !== a.id; });
       else state.hidden.push(a.id);
+      save(); closeSheet(); render();
+    };
+    if ($('fDel')) $('fDel').onclick = function () {
+      if (!confirm('Delete ' + a.name + '?')) return;
+      state.custom = state.custom.filter(function (c) { return c.id !== a.id; });
+      state.hidden = state.hidden.filter(function (h) { return h !== a.id; });
       save(); closeSheet(); render();
     };
     $('fSave').onclick = function () {
