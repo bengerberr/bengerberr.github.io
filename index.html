@@ -65,6 +65,21 @@
   .add .ic { background: transparent; border: 2px dashed rgba(255,255,255,.22); box-shadow: none; font-size: 28px; color: var(--muted); }
   .add { display: none; }
   body.editing .add { display: flex; }
+  /* Rearranging (in Edit): drag apps, move sections up and down. */
+  section h2 { display: flex; align-items: center; gap: 6px; min-height: 30px; }
+  section h2 .sec-name { flex: 1; }
+  .sec-btn { display: none; width: 30px; height: 30px; border-radius: 10px; background: rgba(255,255,255,.08); color: var(--text);
+    font-size: 15px; place-items: center; letter-spacing: 0; }
+  .sec-btn:disabled { opacity: .25; }
+  body.editing .sec-btn { display: grid; }
+  body.editing #sections .app[data-id] { touch-action: none; }
+  .grid:empty::after, .grid.only-add::before { content: ''; }
+  body.editing .grid { min-height: 96px; }
+  .app.lifted { opacity: .25; }
+  #ghost { position: fixed; z-index: 40; pointer-events: none; width: 76px; display: flex; flex-direction: column; align-items: center; gap: 7px;
+    transform: translate(-50%, -60%) scale(1.12); filter: drop-shadow(0 12px 22px rgba(0,0,0,.55)); }
+  #ghost .ic { animation: none !important; }
+  #ghost .badge, #ghost .dot { display: none !important; }
   .foot { text-align: center; color: var(--muted); font-size: 12px; margin-top: 8px; }
   /* Archive: games you're done with for now, tucked away at the bottom. */
   .archive-head { width: 100%; display: flex; align-items: center; justify-content: space-between; padding: 14px 16px;
@@ -187,13 +202,24 @@
 
   // ---- saved settings (per device) ----
   var KEY = 'gerbers-games:v1';
-  var state = { custom: [], edits: {}, hidden: [], recent: [], bubble: { side: 'right', y: 0.72 } };
+  var state = { custom: [], edits: {}, hidden: [], recent: [], order: [], secOrder: [], bubble: { side: 'right', y: 0.72 } };
   try { var s = JSON.parse(localStorage.getItem(KEY) || 'null'); if (s) for (var k in s) state[k] = s[k]; } catch (e) {}
   function save() { try { localStorage.setItem(KEY, JSON.stringify(state)); } catch (e) {} }
 
   function apps() {
-    return BUILT_IN.map(function (a) { return Object.assign({}, a, state.edits[a.id] || {}); })
+    var list = BUILT_IN.map(function (a) { return Object.assign({}, a, state.edits[a.id] || {}); })
       .concat(state.custom.map(function (a) { return Object.assign({ custom: true }, a); }));
+    // Your own order first; anything new goes at the end in its usual spot.
+    var pos = {};
+    list.forEach(function (a, i) { var o = state.order.indexOf(a.id); pos[a.id] = o >= 0 ? o : 1000 + i; });
+    return list.sort(function (a, b) { return pos[a.id] - pos[b.id]; });
+  }
+  function sectionList() {
+    var secs = [];
+    state.secOrder.concat(SECTIONS, apps().map(function (a) { return a.section; })).forEach(function (s) {
+      if (s && secs.indexOf(s) < 0) secs.push(s);
+    });
+    return secs;
   }
   function find(id) { return apps().filter(function (a) { return a.id === id; })[0]; }
   function $(id) { return document.getElementById(id); }
@@ -210,14 +236,18 @@
   }
 
   function render() {
-    var list = apps(), html = '';
-    var secs = SECTIONS.slice();
-    list.forEach(function (a) { if (secs.indexOf(a.section) < 0) secs.push(a.section); });
-    secs.forEach(function (sec) {
+    var list = apps(), html = '', editing = document.body.classList.contains('editing');
+    var secs = sectionList().filter(function (sec) {
+      return editing || list.some(function (a) { return a.section === sec && state.hidden.indexOf(a.id) < 0; });
+    });
+    secs.forEach(function (sec, i) {
       var items = list.filter(function (a) { return a.section === sec && state.hidden.indexOf(a.id) < 0; });
-      if (!items.length && sec !== 'Games') return;
-      html += '<section><h2>' + esc(sec) + '</h2><div class="grid">' + items.map(tileHTML).join('') +
-        (sec === secs[0] ? '<button class="app add" data-add="1"><div class="ic">+</div><span class="name">Add app</span></button>' : '') + '</div></section>';
+      html += '<section data-sec="' + esc(sec) + '"><h2><span class="sec-name">' + esc(sec) + '</span>' +
+        (items.length || SECTIONS.indexOf(sec) >= 0 ? '' : '<button class="sec-btn" data-secdel="' + esc(sec) + '" aria-label="Remove section">✕</button>') +
+        '<button class="sec-btn" data-secmove="-1" data-s="' + esc(sec) + '"' + (i === 0 ? ' disabled' : '') + ' aria-label="Move up">↑</button>' +
+        '<button class="sec-btn" data-secmove="1" data-s="' + esc(sec) + '"' + (i === secs.length - 1 ? ' disabled' : '') + ' aria-label="Move down">↓</button>' +
+        '</h2><div class="grid" data-sec="' + esc(sec) + '">' + items.map(tileHTML).join('') +
+        (i === 0 ? '<button class="app add" data-add="1"><div class="ic">+</div><span class="name">Add app</span></button>' : '') + '</div></section>';
     });
     $('sections').innerHTML = html;
 
@@ -233,7 +263,7 @@
 
     var h = new Date().getHours();
     $('hello').textContent = (h < 12 ? 'Good morning' : h < 17 ? 'Good afternoon' : 'Good evening') + ', Ben';
-    $('foot').textContent = document.body.classList.contains('editing') ? 'Tap an app to rename, archive or change it. Changes stay on this phone.' : '';
+    $('foot').textContent = document.body.classList.contains('editing') ? 'Drag apps to move them, even into another section. Tap one to rename, archive or change it. Changes stay on this phone.' : '';
   }
 
   // ---- opening apps ----
@@ -312,6 +342,20 @@
 
   // ---- home taps ----
   document.addEventListener('click', function (e) {
+    if (justDragged) { justDragged = false; e.preventDefault(); return; }
+    var sb = e.target.closest('[data-secmove],[data-secdel]');
+    if (sb) {
+      var secs = sectionList();
+      if (sb.dataset.secdel) secs = secs.filter(function (s) { return s !== sb.dataset.secdel; });
+      else {
+        var visible = Array.prototype.map.call(document.querySelectorAll('#sections section'), function (el) { return el.dataset.sec; });
+        var i = visible.indexOf(sb.dataset.s), j = i + Number(sb.dataset.secmove);
+        if (j < 0 || j >= visible.length) return;
+        var tmp = visible[i]; visible[i] = visible[j]; visible[j] = tmp;
+        secs = visible.concat(secs.filter(function (s) { return visible.indexOf(s) < 0; }));
+      }
+      state.secOrder = secs; save(); render(); return;
+    }
     var t = e.target.closest('[data-id],[data-add]');
     if (!t || !$('home').contains(t)) return;
     if (t.dataset.add) return editSheet(null);
@@ -330,7 +374,7 @@
   var pressT = null;
   $('home').addEventListener('touchstart', function (e) {
     var t = e.target.closest('.app[data-id]');
-    if (!t) return;
+    if (!t || document.body.classList.contains('editing')) return;
     pressT = setTimeout(function () { pressT = 'fired'; if (navigator.vibrate) navigator.vibrate(10); editSheet(find(t.dataset.id)); }, 550);
   }, { passive: true });
   ['touchend', 'touchmove', 'touchcancel'].forEach(function (ev) {
@@ -341,6 +385,84 @@
     }, { passive: false });
   });
   $('home').addEventListener('contextmenu', function (e) { if (e.target.closest('.app')) e.preventDefault(); });
+
+  // ---- drag to rearrange (Edit mode) ----
+  var dragApp = null, justDragged = false, ghost = null, scrollV = 0;
+  $('sections').addEventListener('pointerdown', function (e) {
+    if (!document.body.classList.contains('editing')) return;
+    var t = e.target.closest('.app[data-id]');
+    if (!t) return;
+    dragApp = { el: t, x: e.clientX, y: e.clientY, on: false, id: e.pointerId };
+  });
+  addEventListener('pointermove', function (e) {
+    if (!dragApp || e.pointerId !== dragApp.id) return;
+    if (!dragApp.on) {
+      if (Math.abs(e.clientX - dragApp.x) + Math.abs(e.clientY - dragApp.y) < 8) return;
+      dragApp.on = true;
+      ghost = dragApp.el.cloneNode(true); ghost.id = 'ghost'; ghost.className = '';
+      document.body.appendChild(ghost);
+      dragApp.el.classList.add('lifted');
+      if (navigator.vibrate) navigator.vibrate(8);
+      requestAnimationFrame(autoScroll);
+    }
+    e.preventDefault();
+    ghost.style.left = e.clientX + 'px'; ghost.style.top = e.clientY + 'px';
+    dragApp.lx = e.clientX; dragApp.ly = e.clientY;
+    var H = innerHeight;
+    scrollV = e.clientY < 110 ? -(110 - e.clientY) / 6 : e.clientY > H - 90 ? (e.clientY - (H - 90)) / 6 : 0;
+    placeAt(e.clientX, e.clientY);
+  }, { passive: false });
+  function placeAt(x, y) {
+    var under = document.elementFromPoint(x, y);
+    if (!under) return;
+    var grid = under.closest('#sections .grid');
+    if (!grid) { var sec = under.closest('#sections section'); grid = sec && sec.querySelector('.grid'); }
+    if (!grid) return;
+    var over = under.closest('.app');
+    var el = dragApp.el;
+    if (over && over !== el && over.dataset.id) {
+      var r = over.getBoundingClientRect();
+      var after = x > r.left + r.width / 2;
+      grid.insertBefore(el, after ? over.nextSibling : over);
+    } else if (!over || over.dataset.add) {
+      // Empty space in a section, or the Add tile: go to the end of that section.
+      var add = grid.querySelector('.add');
+      if (el.parentNode !== grid || !over) grid.insertBefore(el, add || null);
+    }
+    var addTile = grid.querySelector('.add');
+    if (addTile && addTile.nextSibling) grid.appendChild(addTile);
+  }
+  function autoScroll() {
+    if (!dragApp || !dragApp.on) return;
+    if (scrollV) { $('home').scrollTop += scrollV; placeAt(dragApp.lx, dragApp.ly); }
+    requestAnimationFrame(autoScroll);
+  }
+  function endDrag(e) {
+    if (!dragApp || e.pointerId !== dragApp.id) return;
+    var was = dragApp.on;
+    dragApp.el.classList.remove('lifted');
+    if (ghost) { ghost.remove(); ghost = null; }
+    dragApp = null; scrollV = 0;
+    if (!was) return;
+    justDragged = true; setTimeout(function () { justDragged = false; }, 400);
+    // Read the new layout straight off the screen.
+    var newOrder = [];
+    document.querySelectorAll('#sections .grid').forEach(function (g) {
+      g.querySelectorAll('.app[data-id]').forEach(function (t) {
+        var id = t.dataset.id, a = find(id);
+        newOrder.push(id);
+        if (a && a.section !== g.dataset.sec) {
+          if (a.custom) state.custom.forEach(function (c) { if (c.id === id) c.section = g.dataset.sec; });
+          else { state.edits[id] = Object.assign({}, state.edits[id] || {}, { section: g.dataset.sec }); }
+        }
+      });
+    });
+    apps().forEach(function (a) { if (newOrder.indexOf(a.id) < 0) newOrder.push(a.id); });   // archived ones keep a spot
+    state.order = newOrder;
+    save(); render();
+  }
+  addEventListener('pointerup', endDrag);
+  addEventListener('pointercancel', endDrag);
 
   // ---- bubble ----
   var b = $('bubble'), drag = null;
@@ -394,7 +516,7 @@
     a = a || { id: 'c' + Date.now().toString(36), name: '', url: '', emoji: '🎮', colour: 'violet', section: 'Games', custom: true };
     var pick = { emoji: a.emoji || '⭐', colour: a.colour || 'slate' };
     var hidden = state.hidden.indexOf(a.id) >= 0;
-    var secs = SECTIONS.concat(apps().map(function (x) { return x.section; })).filter(function (v, i, arr) { return arr.indexOf(v) === i; });
+    var secs = sectionList();
 
     $('sheet').innerHTML = '<div class="grab"></div><h3>' + (isNew ? 'Add an app' : needLink ? 'Add the link for ' + esc(a.name) : esc(a.name)) + '</h3>' +
       (needLink ? '<p class="note">Paste the web app link (for Apps Script it ends in /exec). You only do this once on this phone.</p>' : '') +
