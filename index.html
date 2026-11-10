@@ -80,8 +80,14 @@
   /* ---------- App frames ---------- */
   #frames { position: fixed; inset: 0; background: var(--bg); visibility: hidden; opacity: 0; transition: opacity .22s; }
   body.in-app #frames { visibility: visible; opacity: 1; }
-  #frames iframe { position: absolute; left: 0; right: 0; top: var(--st); bottom: var(--sb); width: 100%;
-    height: calc(100% - var(--st) - var(--sb)); border: 0; display: none; background: #fff; }
+  /* Your own home screen pages (Card Club, Golf, Stagescript, Gerber Pay) get the whole screen and are told
+     where the clock and home bar are, so they lay out exactly like they do on their own.
+     Apps Script links can't be told that, so they only keep clear of the clock. */
+  #frames iframe { position: absolute; left: 0; right: 0; top: var(--st); bottom: 0; width: 100%;
+    height: calc(100% - var(--st)); border: 0; display: none; background: #fff; }
+  #frames iframe.full { top: 0; height: 100%; }
+  #probe { position: fixed; top: 0; left: 0; visibility: hidden; pointer-events: none;
+    padding: env(safe-area-inset-top, 0px) env(safe-area-inset-right, 0px) env(safe-area-inset-bottom, 0px) env(safe-area-inset-left, 0px); }
   #frames iframe.show { display: block; }
   #loading { position: absolute; inset: 0; display: none; place-items: center; pointer-events: none; }
   #loading.on { display: grid; }
@@ -137,6 +143,7 @@
   <div class="foot" id="foot"></div>
 </div>
 
+<div id="probe"></div>
 <div id="frames"><div id="loading"><div class="spin"></div></div></div>
 
 <button id="bubble" aria-label="Back to Gerber's Games">
@@ -246,7 +253,8 @@
       f.allow = 'clipboard-read; clipboard-write; web-share; fullscreen; autoplay; identity-credentials-get';
       f.dataset.url = a.url;
       $('loading').classList.add('on');
-      f.onload = function () { if (current === id) $('loading').classList.remove('on'); };
+      f.onload = function () { if (current === id) $('loading').classList.remove('on'); tellSafe(f); };
+      if (a.url.indexOf(GH) === 0 || a.url.indexOf(location.origin + '/') === 0) { f.classList.add('full'); watchSafe(f); }
       f.src = a.url;
       $('frames').appendChild(f);
       frames[id] = f;
@@ -264,6 +272,30 @@
     history.pushState({ app: id }, '', '#' + id);
     render();
   }
+
+  // The pages inside think the clock and home bar take no room (iPhones report zero inside a frame),
+  // so we hand them the real numbers. Only works for pages on the same site as Gerber's Games.
+  function insets() {
+    var cs = getComputedStyle($('probe'));
+    return [cs.paddingTop, cs.paddingRight, cs.paddingBottom, cs.paddingLeft];
+  }
+  function tellSafe(f) {
+    if (!f.classList.contains('full')) return;
+    try {
+      var d = f.contentDocument;
+      if (!d || !d.head || d.URL === 'about:blank') return false;
+      var st = d.getElementById('gg-safe');
+      if (!st) { st = d.createElement('style'); st.id = 'gg-safe'; d.head.appendChild(st); }
+      var i = insets().join(' ');
+      st.textContent = 'body{padding:' + i + ' !important}#safe{padding:' + i + ' !important}';
+      f.contentWindow.dispatchEvent(new Event('resize'));
+      return true;
+    } catch (e) { f.classList.remove('full'); return true; }   // not ours after all: fall back to keeping clear of the clock
+  }
+  function watchSafe(f) {
+    var n = 0, t = setInterval(function () { if (tellSafe(f) || ++n > 200) clearInterval(t); }, 25);
+  }
+  addEventListener('resize', function () { for (var k in frames) tellSafe(frames[k]); });
 
   function goHome(fromHistory) {
     if (!current) return;
