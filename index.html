@@ -1,10 +1,387 @@
 <!DOCTYPE html>
-<html lang="en-AU"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><title>Ben's apps</title>
-<style>body{margin:0;min-height:100vh;display:grid;place-items:center;background:#08160f;color:#f6f0e1;font:16px system-ui,sans-serif;padding:24px;box-sizing:border-box}
-nav{display:flex;flex-direction:column;gap:12px;width:min(22em,100%)}
-a{display:flex;align-items:center;gap:14px;color:inherit;text-decoration:none;padding:14px 18px;border-radius:18px;background:rgba(246,240,225,.07)}
-img{width:56px;height:56px;border-radius:13px;flex-shrink:0}</style></head>
-<body><nav>
-<a href="emperor-scum/"><img src="emperor-scum/icon-180.png" alt=""><b>Card Club</b></a>
-<a href="stagescript/"><img src="stagescript/icon-180.png" alt=""><b>Stagescript</b></a>
-</nav></body></html>
+<html lang="en-AU">
+<head>
+<meta charset="utf-8">
+<title>Gerber's Games</title>
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#0d1117">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="Gerber's Games">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="robots" content="noindex, nofollow">
+<meta name="referrer" content="no-referrer">
+<link rel="apple-touch-icon" href="https://bengerberr.github.io/icon-180.png">
+<link rel="icon" type="image/png" href="https://bengerberr.github.io/icon-192.png">
+<link rel="manifest" href="manifest.webmanifest">
+<style>
+  :root {
+    --bg: #0d1117; --bg2: #161b26; --card: rgba(255,255,255,.06); --line: rgba(255,255,255,.09);
+    --text: #f2f4f8; --muted: #8b93a7; --accent: #e8b14a;
+    --st: env(safe-area-inset-top, 0px); --sb: env(safe-area-inset-bottom, 0px);
+  }
+  * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+  html, body { margin: 0; height: 100%; background: var(--bg); color: var(--text);
+    font: 16px/1.4 -apple-system, BlinkMacSystemFont, "SF Pro Text", system-ui, sans-serif;
+    -webkit-user-select: none; user-select: none; overscroll-behavior: none; }
+  body { background: radial-gradient(120% 60% at 50% -10%, #1c2436 0%, var(--bg) 60%) fixed; }
+  button { font: inherit; color: inherit; background: none; border: 0; padding: 0; cursor: pointer; }
+
+  /* ---------- Home ---------- */
+  #home { position: fixed; inset: 0; overflow-y: auto; -webkit-overflow-scrolling: touch;
+    padding: calc(var(--st) + 18px) 20px calc(var(--sb) + 40px); transition: transform .32s cubic-bezier(.2,.8,.2,1), opacity .25s; }
+  body.in-app #home { transform: scale(.94); opacity: 0; pointer-events: none; }
+  header { display: flex; align-items: flex-end; justify-content: space-between; margin: 6px 4px 22px; }
+  .hello { color: var(--muted); font-size: 14px; font-weight: 500; }
+  h1 { margin: 2px 0 0; font-size: 30px; font-weight: 800; letter-spacing: -.02em; }
+  .edit-btn { font-size: 15px; font-weight: 600; color: var(--accent); padding: 8px 2px; }
+
+  .recent { display: flex; gap: 10px; overflow-x: auto; margin: 0 -20px 26px; padding: 0 20px; scrollbar-width: none; }
+  .recent::-webkit-scrollbar { display: none; }
+  .recent:empty { display: none; }
+  .pill { flex: none; display: flex; align-items: center; gap: 10px; padding: 8px 14px 8px 8px; border-radius: 16px;
+    background: var(--card); border: 1px solid var(--line); font-size: 14px; font-weight: 600; }
+  .pill .ic { width: 34px; height: 34px; border-radius: 9px; font-size: 18px; }
+
+  section { margin-bottom: 26px; }
+  section h2 { margin: 0 4px 12px; font-size: 13px; font-weight: 700; letter-spacing: .08em; text-transform: uppercase; color: var(--muted); }
+  .grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 20px 10px; padding: 18px 12px;
+    background: var(--card); border: 1px solid var(--line); border-radius: 26px; }
+  .app { display: flex; flex-direction: column; align-items: center; gap: 7px; min-width: 0; position: relative; }
+  .app:active .ic { transform: scale(.9); filter: brightness(.85); }
+  .ic { width: 62px; height: 62px; border-radius: 16px; display: grid; place-items: center; font-size: 32px; overflow: hidden;
+    box-shadow: 0 6px 16px rgba(0,0,0,.35), inset 0 0 0 .5px rgba(255,255,255,.12); transition: transform .15s, filter .15s; position: relative; }
+  .ic img { width: 100%; height: 100%; display: block; }
+  .ic.empty { opacity: .45; }
+  .name { font-size: 12px; font-weight: 500; max-width: 100%; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; color: #dfe3ec; }
+  .dot { position: absolute; bottom: -1px; left: 50%; width: 5px; height: 5px; margin-left: -2.5px; border-radius: 50%; background: var(--text); opacity: 0; }
+  .app.open .dot { opacity: .8; }
+  .badge { position: absolute; top: -6px; right: 2px; width: 22px; height: 22px; border-radius: 50%; background: #3a4256;
+    color: #fff; font-size: 13px; font-weight: 700; display: none; place-items: center; box-shadow: 0 2px 6px rgba(0,0,0,.4); }
+  body.editing .badge { display: grid; }
+  body.editing .app .ic { animation: wiggle .28s ease-in-out infinite alternate; }
+  body.editing .app:nth-child(2n) .ic { animation-delay: -.14s; }
+  @keyframes wiggle { from { transform: rotate(-2deg); } to { transform: rotate(2deg); } }
+  .add .ic { background: transparent; border: 2px dashed rgba(255,255,255,.22); box-shadow: none; font-size: 28px; color: var(--muted); }
+  .add { display: none; }
+  body.editing .add { display: flex; }
+  .foot { text-align: center; color: var(--muted); font-size: 12px; margin-top: 8px; }
+  .hidden-list { display: none; }
+  body.editing .hidden-list { display: block; }
+
+  /* ---------- App frames ---------- */
+  #frames { position: fixed; inset: 0; background: var(--bg); visibility: hidden; opacity: 0; transition: opacity .22s; }
+  body.in-app #frames { visibility: visible; opacity: 1; }
+  #frames iframe { position: absolute; left: 0; right: 0; top: var(--st); bottom: var(--sb); width: 100%;
+    height: calc(100% - var(--st) - var(--sb)); border: 0; display: none; background: #fff; }
+  #frames iframe.show { display: block; }
+  #loading { position: absolute; inset: 0; display: none; place-items: center; pointer-events: none; }
+  #loading.on { display: grid; }
+  .spin { width: 34px; height: 34px; border-radius: 50%; border: 3px solid rgba(255,255,255,.15); border-top-color: #fff; animation: sp .8s linear infinite; }
+  @keyframes sp { to { transform: rotate(360deg); } }
+
+  /* The floating home bubble: tap to go back, drag to move it out of the way. */
+  #bubble { position: fixed; z-index: 20; width: 46px; height: 46px; border-radius: 50%; display: none; place-items: center;
+    background: rgba(20,24,34,.72); -webkit-backdrop-filter: blur(14px); backdrop-filter: blur(14px);
+    border: 1px solid rgba(255,255,255,.18); box-shadow: 0 6px 20px rgba(0,0,0,.45); touch-action: none; transition: opacity .2s; opacity: .85; }
+  body.in-app #bubble { display: grid; }
+  #bubble.drag { opacity: 1; transition: none; }
+  #bubble svg { width: 22px; height: 22px; }
+
+  /* ---------- Sheet ---------- */
+  #veil { position: fixed; inset: 0; z-index: 30; background: rgba(0,0,0,.5); opacity: 0; pointer-events: none; transition: opacity .2s; }
+  #veil.on { opacity: 1; pointer-events: auto; }
+  #sheet { position: fixed; z-index: 31; left: 0; right: 0; bottom: 0; background: var(--bg2); border-radius: 24px 24px 0 0;
+    padding: 10px 20px calc(var(--sb) + 20px); transform: translateY(105%); transition: transform .3s cubic-bezier(.2,.8,.2,1);
+    border-top: 1px solid var(--line); max-height: 90vh; overflow-y: auto; -webkit-user-select: text; user-select: text; }
+  #sheet.on { transform: none; }
+  .grab { width: 38px; height: 5px; border-radius: 3px; background: rgba(255,255,255,.2); margin: 0 auto 14px; }
+  #sheet h3 { margin: 0 0 14px; font-size: 20px; }
+  #sheet label { display: block; font-size: 13px; color: var(--muted); margin: 12px 0 6px; font-weight: 600; }
+  #sheet input, #sheet select { width: 100%; font-size: 16px; padding: 12px 14px; border-radius: 12px; border: 1px solid var(--line);
+    background: rgba(255,255,255,.05); color: var(--text); outline: none; -webkit-appearance: none; appearance: none; }
+  #sheet input:focus { border-color: var(--accent); }
+  .row { display: flex; gap: 10px; }
+  .row > * { flex: 1; }
+  .colours { display: flex; gap: 8px; flex-wrap: wrap; }
+  .sw { width: 34px; height: 34px; border-radius: 10px; border: 2px solid transparent; }
+  .sw.on { border-color: #fff; }
+  .actions { display: flex; gap: 10px; margin-top: 20px; }
+  .btn { flex: 1; padding: 14px; border-radius: 14px; font-weight: 700; text-align: center; background: rgba(255,255,255,.08); }
+  .btn.primary { background: var(--accent); color: #1b1405; }
+  .btn.danger { color: #ff7b7b; }
+  .note { color: var(--muted); font-size: 13px; margin: 8px 0 0; }
+</style>
+</head>
+<body>
+
+<div id="home">
+  <header>
+    <div>
+      <div class="hello" id="hello">Hello</div>
+      <h1>Gerber's Games</h1>
+    </div>
+    <button class="edit-btn" id="editBtn">Edit</button>
+  </header>
+  <div class="recent" id="recent"></div>
+  <div id="sections"></div>
+  <section class="hidden-list" id="hiddenWrap"><h2>Hidden</h2><div class="grid" id="hiddenGrid"></div></section>
+  <div class="foot" id="foot"></div>
+</div>
+
+<div id="frames"><div id="loading"><div class="spin"></div></div></div>
+
+<button id="bubble" aria-label="Back to Gerber's Games">
+  <svg viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+    <rect x="3.5" y="3.5" width="7" height="7" rx="2"/><rect x="13.5" y="3.5" width="7" height="7" rx="2"/>
+    <rect x="3.5" y="13.5" width="7" height="7" rx="2"/><rect x="13.5" y="13.5" width="7" height="7" rx="2"/>
+  </svg>
+</button>
+
+<div id="veil"></div>
+<div id="sheet"></div>
+
+<script>
+(function () {
+  var GH = 'https://bengerberr.github.io/';
+  var GAS = 'https://script.google.com/macros/s/';
+
+  // open: 'hub' shows the app inside Gerber's Games (tap the bubble to come back),
+  //       'safari' opens it in Safari, 'app' hands the link to another app (Pythonista).
+  var BUILT_IN = [
+    { id: 'card-club',   name: 'Card Club',      section: 'Games',   url: GH + 'emperor-scum/', icon: GH + 'emperor-scum/icon-180.png', bar: '#0a4229' },
+    { id: 'golf',        name: 'Golf',           section: 'Games',   url: GH + 'golf/',         icon: GH + 'golf/icon-180.png',         bar: '#2f6b35' },
+    { id: 'games-night', name: 'Games Night',    section: 'Games',   url: GAS + 'AKfycbxD-wGuTSZdIHa77KTrXsg8ZexzoElYaNLqgyRa7Cig93h9icQ7MhbDXYHqooYghhxtnQ/exec', icon: GH + 'games-night/icon-180.png', bar: '#0b3322' },
+    { id: 'deep-dive',   name: "Zorp's Deep Dive", section: 'Games', url: GAS + 'AKfycbykAYhOL1G2FZdy-t6eLugy7XQYE4RzONaNsfg-9zIKVQM1bVmmROsj6mpW_9kXRfhH5A/exec', emoji: '🛸', colour: 'ocean', bar: '#05233b' },
+    { id: 'pixel-paint', name: 'Pixel Paint',    section: 'Games',   url: GAS + 'AKfycbztcX_CPxGNqrue4LZ0UY-xfO-TIFV-NBqJv_C8LgkK95duI5Jvqx5_lw6Gac8T9e6D/exec', emoji: '🎨', colour: 'berry', bar: '#2a1430' },
+    { id: 'amber',       name: 'Amber Games',    section: 'Games',   url: 'pythonista3://number-le.py?action=run', open: 'app', emoji: '🔢', colour: 'amber' },
+    { id: 'arcade2',     name: 'Arcade²',        section: 'Games',   url: '', emoji: '👾', colour: 'violet' },
+    { id: 'stagescript', name: 'Stagescript',    section: 'Theatre', url: GH + 'stagescript/',  icon: GH + 'stagescript/icon-180.png',  bar: '#141414' },
+    { id: 'cricket-360', name: 'Cricket 360',    section: 'Life',    url: GAS + 'AKfycby20fqiT6-jVdXuc28KaERGhaJaD2cyxx-njk3704gMMsh3AdWCmFA77-uW58mln-ae/exec', emoji: '🏏', colour: 'grass', bar: '#0f2f1c' },
+    { id: 'gerber-pay',  name: 'Gerber Pay',     section: 'Life',    url: GH + 'gerber-pay/',   icon: GH + 'gerber-pay/icon-180.png',   bar: '#1f3a2e' },
+    { id: 'habit-quest', name: 'Habit Quest',    section: 'Life',    url: '', emoji: '🔥', colour: 'sunset' }
+  ];
+  var SECTIONS = ['Games', 'Theatre', 'Life'];
+  var COLOURS = {
+    amber: ['#f6c25b', '#d98a1f'], ocean: ['#36b6e8', '#1a4fa8'], berry: ['#ff7aa8', '#b0307a'], grass: ['#5fd38a', '#1d7a47'],
+    violet: ['#a78bff', '#5a3fd6'], sunset: ['#ff9a56', '#e0444f'], slate: ['#7d8aa6', '#3a4560'], night: ['#3b4566', '#151a2b']
+  };
+  var EMOJIS = ['🎮','🃏','🎲','🧩','🎯','🏆','🎭','📋','💰','🏠','📅','✅','⭐','🚀','🎵','📚'];
+
+  // ---- saved settings (per device) ----
+  var KEY = 'gerbers-games:v1';
+  var state = { custom: [], edits: {}, hidden: [], recent: [], bubble: { side: 'right', y: 0.72 } };
+  try { var s = JSON.parse(localStorage.getItem(KEY) || 'null'); if (s) for (var k in s) state[k] = s[k]; } catch (e) {}
+  function save() { try { localStorage.setItem(KEY, JSON.stringify(state)); } catch (e) {} }
+
+  function apps() {
+    return BUILT_IN.map(function (a) { return Object.assign({}, a, state.edits[a.id] || {}); })
+      .concat(state.custom.map(function (a) { return Object.assign({ custom: true }, a); }));
+  }
+  function find(id) { return apps().filter(function (a) { return a.id === id; })[0]; }
+  function $(id) { return document.getElementById(id); }
+  function esc(s) { return String(s == null ? '' : s).replace(/[&<>"']/g, function (c) { return '&#' + c.charCodeAt(0) + ';'; }); }
+
+  function iconHTML(a) {
+    if (a.icon) return '<div class="ic"><img src="' + esc(a.icon) + '" alt="" loading="lazy"></div>';
+    var c = COLOURS[a.colour] || COLOURS.slate;
+    return '<div class="ic' + (a.url ? '' : ' empty') + '" style="background:linear-gradient(160deg,' + c[0] + ',' + c[1] + ')">' + esc(a.emoji || '⭐') + '</div>';
+  }
+  function tileHTML(a) {
+    return '<button class="app' + (frames[a.id] ? ' open' : '') + '" data-id="' + esc(a.id) + '">' + iconHTML(a) +
+      '<span class="badge">' + (a.custom ? '✎' : '✎') + '</span><span class="name">' + esc(a.name) + '</span><span class="dot"></span></button>';
+  }
+
+  function render() {
+    var list = apps(), html = '';
+    var secs = SECTIONS.slice();
+    list.forEach(function (a) { if (secs.indexOf(a.section) < 0) secs.push(a.section); });
+    secs.forEach(function (sec) {
+      var items = list.filter(function (a) { return a.section === sec && state.hidden.indexOf(a.id) < 0; });
+      if (!items.length && sec !== 'Games') return;
+      html += '<section><h2>' + esc(sec) + '</h2><div class="grid">' + items.map(tileHTML).join('') +
+        (sec === secs[0] ? '<button class="app add" data-add="1"><div class="ic">+</div><span class="name">Add app</span></button>' : '') + '</div></section>';
+    });
+    $('sections').innerHTML = html;
+
+    var hid = list.filter(function (a) { return state.hidden.indexOf(a.id) >= 0; });
+    $('hiddenGrid').innerHTML = hid.map(tileHTML).join('');
+    $('hiddenWrap').style.display = hid.length ? '' : 'none';
+
+    $('recent').innerHTML = state.recent.map(find).filter(Boolean).slice(0, 5).map(function (a) {
+      return '<button class="pill" data-id="' + esc(a.id) + '">' + iconHTML(a) + esc(a.name) + '</button>';
+    }).join('');
+
+    var h = new Date().getHours();
+    $('hello').textContent = (h < 12 ? 'Good morning' : h < 17 ? 'Good afternoon' : 'Good evening') + ', Ben';
+    $('foot').textContent = document.body.classList.contains('editing') ? 'Tap an app to change it. Changes stay on this phone.' : '';
+  }
+
+  // ---- opening apps ----
+  var frames = {}, order = [], current = null, MAX_OPEN = 4;
+
+  function openApp(id) {
+    var a = find(id);
+    if (!a) return;
+    if (!a.url) { editSheet(a, true); return; }
+    state.recent = [id].concat(state.recent.filter(function (r) { return r !== id; })).slice(0, 8); save();
+    if (a.open === 'app') { location.href = a.url; setTimeout(render, 400); return; }
+    if (a.open === 'safari') { window.open(a.url, '_blank'); render(); return; }
+
+    var f = frames[id];
+    if (!f || f.dataset.url !== a.url) {
+      if (f) f.remove();
+      f = document.createElement('iframe');
+      f.title = a.name;
+      f.allow = 'clipboard-read; clipboard-write; web-share; fullscreen; autoplay; identity-credentials-get';
+      f.dataset.url = a.url;
+      $('loading').classList.add('on');
+      f.onload = function () { if (current === id) $('loading').classList.remove('on'); };
+      f.src = a.url;
+      $('frames').appendChild(f);
+      frames[id] = f;
+    } else {
+      $('loading').classList.remove('on');
+    }
+    // Keep the last few apps alive so switching back is instant and keeps your place.
+    order = [id].concat(order.filter(function (o) { return o !== id; }));
+    while (order.length > MAX_OPEN) { var old = order.pop(); if (frames[old]) { frames[old].remove(); delete frames[old]; } }
+    for (var k in frames) frames[k].classList.toggle('show', k === id);
+    current = id;
+    $('frames').style.background = a.bar || '#0d1117';
+    document.body.classList.add('in-app');
+    document.title = a.name;
+    history.pushState({ app: id }, '', '#' + id);
+    render();
+  }
+
+  function goHome(fromHistory) {
+    if (!current) return;
+    current = null;
+    document.body.classList.remove('in-app');
+    document.title = "Gerber's Games";
+    $('loading').classList.remove('on');
+    if (!fromHistory && location.hash) history.back();
+    render();
+  }
+  window.addEventListener('popstate', function () { if (current) goHome(true); });
+
+  // ---- home taps ----
+  document.addEventListener('click', function (e) {
+    var t = e.target.closest('[data-id],[data-add]');
+    if (!t || !$('home').contains(t)) return;
+    if (t.dataset.add) return editSheet(null);
+    var a = find(t.dataset.id);
+    if (document.body.classList.contains('editing')) editSheet(a);
+    else openApp(a.id);
+  });
+  $('editBtn').onclick = function () {
+    var on = document.body.classList.toggle('editing');
+    this.textContent = on ? 'Done' : 'Edit';
+    render();
+  };
+
+  // Long-press an app to change it without going into Edit.
+  var pressT = null;
+  $('home').addEventListener('touchstart', function (e) {
+    var t = e.target.closest('.app[data-id]');
+    if (!t) return;
+    pressT = setTimeout(function () { pressT = 'fired'; if (navigator.vibrate) navigator.vibrate(10); editSheet(find(t.dataset.id)); }, 550);
+  }, { passive: true });
+  ['touchend', 'touchmove', 'touchcancel'].forEach(function (ev) {
+    $('home').addEventListener(ev, function (e) {
+      if (pressT === 'fired' && ev === 'touchend') e.preventDefault();
+      if (pressT && pressT !== 'fired') clearTimeout(pressT);
+      if (ev !== 'touchend' || pressT !== 'fired') pressT = null; else setTimeout(function () { pressT = null; }, 50);
+    }, { passive: false });
+  });
+  $('home').addEventListener('contextmenu', function (e) { if (e.target.closest('.app')) e.preventDefault(); });
+
+  // ---- bubble ----
+  var b = $('bubble'), drag = null;
+  function placeBubble() {
+    var W = innerWidth, H = innerHeight, s = 46, m = 10;
+    var y = Math.min(Math.max(state.bubble.y * H, 60), H - s - 40);
+    b.style.top = y + 'px';
+    b.style.left = (state.bubble.side === 'left' ? m : W - s - m) + 'px';
+  }
+  b.addEventListener('pointerdown', function (e) {
+    drag = { x: e.clientX, y: e.clientY, moved: false, ox: b.offsetLeft, oy: b.offsetTop };
+    b.setPointerCapture(e.pointerId);
+  });
+  b.addEventListener('pointermove', function (e) {
+    if (!drag) return;
+    var dx = e.clientX - drag.x, dy = e.clientY - drag.y;
+    if (!drag.moved && Math.abs(dx) + Math.abs(dy) < 8) return;
+    drag.moved = true; b.classList.add('drag');
+    b.style.left = (drag.ox + dx) + 'px'; b.style.top = (drag.oy + dy) + 'px';
+  });
+  b.addEventListener('pointerup', function (e) {
+    if (!drag) return;
+    b.classList.remove('drag');
+    if (drag.moved) {
+      state.bubble = { side: e.clientX < innerWidth / 2 ? 'left' : 'right', y: b.offsetTop / innerHeight };
+      save(); placeBubble();
+    } else goHome();
+    drag = null;
+  });
+  addEventListener('resize', placeBubble);
+  placeBubble();
+
+  // ---- edit sheet ----
+  function closeSheet() { $('sheet').classList.remove('on'); $('veil').classList.remove('on'); document.activeElement && document.activeElement.blur && document.activeElement.blur(); }
+  $('veil').onclick = closeSheet;
+
+  function editSheet(a, needLink) {
+    var isNew = !a;
+    a = a || { id: 'c' + Date.now().toString(36), name: '', url: '', emoji: '🎮', colour: 'violet', section: 'Games', custom: true };
+    var pick = { emoji: a.emoji || '⭐', colour: a.colour || 'slate' };
+    var hidden = state.hidden.indexOf(a.id) >= 0;
+    var secs = SECTIONS.concat(apps().map(function (x) { return x.section; })).filter(function (v, i, arr) { return arr.indexOf(v) === i; });
+
+    $('sheet').innerHTML = '<div class="grab"></div><h3>' + (isNew ? 'Add an app' : needLink ? 'Add the link for ' + esc(a.name) : esc(a.name)) + '</h3>' +
+      (needLink ? '<p class="note">Paste the web app link (for Apps Script it ends in /exec). You only do this once on this phone.</p>' : '') +
+      '<label>Name</label><input id="fName" value="' + esc(a.name) + '" placeholder="My app" autocomplete="off">' +
+      '<label>Link</label><input id="fUrl" type="url" inputmode="url" autocapitalize="off" autocomplete="off" spellcheck="false" value="' + esc(a.url) + '" placeholder="https://…">' +
+      '<div class="row"><div><label>Section</label><select id="fSec">' + secs.map(function (s) { return '<option' + (s === a.section ? ' selected' : '') + '>' + esc(s) + '</option>'; }).join('') + '<option value="__new">New section…</option></select></div>' +
+      '<div><label>Opens</label><select id="fOpen"><option value="hub">In Gerber\'s Games</option><option value="safari">In Safari</option><option value="app">In another app</option></select></div></div>' +
+      (a.icon ? '' : '<label>Icon</label><div class="colours" id="fEmoji">' + EMOJIS.map(function (em) { return '<button class="sw' + (em === pick.emoji ? ' on' : '') + '" data-e="' + em + '" style="background:rgba(255,255,255,.06);font-size:18px">' + em + '</button>'; }).join('') + '</div>' +
+        '<label>Colour</label><div class="colours" id="fCol">' + Object.keys(COLOURS).map(function (c) { return '<button class="sw' + (c === pick.colour ? ' on' : '') + '" data-c="' + c + '" style="background:linear-gradient(160deg,' + COLOURS[c][0] + ',' + COLOURS[c][1] + ')"></button>'; }).join('') + '</div>') +
+      '<div class="actions">' + (isNew ? '' : '<button class="btn danger" id="fDel">' + (a.custom ? 'Delete' : hidden ? 'Show' : 'Hide') + '</button>') +
+      '<button class="btn" id="fCancel">Cancel</button><button class="btn primary" id="fSave">' + (needLink ? 'Save & open' : 'Save') + '</button></div>';
+    $('fOpen').value = a.open || 'hub';
+
+    $('sheet').querySelectorAll('[data-e]').forEach(function (el) { el.onclick = function () { pick.emoji = el.dataset.e; $('sheet').querySelectorAll('[data-e]').forEach(function (x) { x.classList.toggle('on', x === el); }); }; });
+    $('sheet').querySelectorAll('[data-c]').forEach(function (el) { el.onclick = function () { pick.colour = el.dataset.c; $('sheet').querySelectorAll('[data-c]').forEach(function (x) { x.classList.toggle('on', x === el); }); }; });
+    $('fSec').onchange = function () { if (this.value === '__new') { var n = prompt('Section name'); if (n) { var o = document.createElement('option'); o.textContent = n; this.insertBefore(o, this.lastChild); this.value = n; } else this.value = a.section; } };
+    $('fCancel').onclick = closeSheet;
+    if ($('fDel')) $('fDel').onclick = function () {
+      if (a.custom) { if (!confirm('Delete ' + a.name + '?')) return; state.custom = state.custom.filter(function (c) { return c.id !== a.id; }); }
+      else if (hidden) state.hidden = state.hidden.filter(function (h) { return h !== a.id; });
+      else state.hidden.push(a.id);
+      save(); closeSheet(); render();
+    };
+    $('fSave').onclick = function () {
+      var url = $('fUrl').value.trim();
+      if (url && !/^[a-z][a-z0-9+.-]*:/i.test(url)) url = 'https://' + url;
+      var data = { name: $('fName').value.trim() || a.name || 'App', url: url, section: $('fSec').value, open: $('fOpen').value };
+      if (!a.icon) { data.emoji = pick.emoji; data.colour = pick.colour; }
+      if (a.custom) {
+        var obj = Object.assign({ id: a.id }, data);
+        state.custom = state.custom.filter(function (c) { return c.id !== a.id; }).concat([obj]);
+      } else state.edits[a.id] = data;
+      save(); closeSheet(); render();
+      if (needLink && url) openApp(a.id);
+    };
+    $('veil').classList.add('on');
+    $('sheet').classList.add('on');
+  }
+
+  // Coming back to the page with #app in the link (e.g. after a reload) reopens that app.
+  render();
+  var start = location.hash.slice(1);
+  if (start && find(start)) { history.replaceState(null, '', location.pathname); openApp(start); }
+})();
+</script>
+</body>
+</html>
