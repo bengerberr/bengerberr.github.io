@@ -285,7 +285,7 @@
       f.allow = 'clipboard-read; clipboard-write; web-share; fullscreen; autoplay; identity-credentials-get';
       f.dataset.url = a.url;
       $('loading').classList.add('on');
-      f.onload = function () { if (current === id) $('loading').classList.remove('on'); tellSafe(f); };
+      f.onload = function () { if (current === id) $('loading').classList.remove('on'); tellSafe(f); readColour(id, f); };
       if (a.url.indexOf(GH) === 0 || a.url.indexOf(location.origin + '/') === 0) { f.classList.add('full'); watchSafe(f); }
       f.src = a.url;
       $('frames').appendChild(f);
@@ -298,7 +298,7 @@
     while (order.length > MAX_OPEN) { var old = order.pop(); if (frames[old]) { frames[old].remove(); delete frames[old]; } }
     for (var k in frames) frames[k].classList.toggle('show', k === id);
     current = id;
-    $('frames').style.background = a.bar || '#0d1117';
+    paintEdges(id);
     document.body.classList.add('in-app');
     document.title = a.name;
     history.pushState({ app: id }, '', '#' + id);
@@ -339,7 +339,11 @@
         var w = frames[k].contentWindow, p = e.source, n = 0;
         if (!w || p === w) continue;
         while (p && n++ < 10) {
-          if (p.parent === w) { w.dispatchEvent(new MessageEvent('message', { data: e.data, origin: e.origin, source: e.source })); return; }
+          if (p.parent === w) {
+            // Card Club tells us its table colours: use the bottom one for the strip under the home bar.
+            var d = e.data || {};
+            if (d.type === 'cc-theme' && /^#[0-9a-f]{3,8}$/i.test(d.bottom || '')) setEdge(k, d.bottom);
+            w.dispatchEvent(new MessageEvent('message', { data: e.data, origin: e.origin, source: e.source })); return; }
           if (p.parent === p || p.parent === window) break;
           p = p.parent;
         }
@@ -347,11 +351,42 @@
     }
   });
 
+  // iPhones sometimes leave a strip under the home bar that shows the page behind the app, not the app.
+  // So the page behind is painted the app's own colour while it's open.
+  function edgeOf(id) { var a = find(id) || {}; return (state.edge || {})[id] || a.bar || '#0d1117'; }
+  function paintEdges(id) {
+    var c = id ? edgeOf(id) : '';
+    $('frames').style.background = c || '';
+    document.documentElement.style.background = c;
+    document.body.style.background = c;
+  }
+  function setEdge(id, c) {
+    state.edge = state.edge || {};
+    if (state.edge[id] === c) return;
+    state.edge[id] = c; save();
+    if (current === id) paintEdges(id);
+  }
+  // Your own pages (Gerber Pay, Stagescript, Golf) have a background colour we can read straight off them.
+  function readColour(id, f) {
+    try {
+      var d = f.contentDocument;
+      [d.body, d.documentElement].some(function (el) {
+        var c = getComputedStyle(el).backgroundColor, m = c.match(/rgba?\(([^)]+)\)/);
+        if (!m) return false;
+        var v = m[1].split(',').map(parseFloat);
+        if (v.length === 4 && v[3] < 0.9) return false;
+        setEdge(id, '#' + v.slice(0, 3).map(function (n) { return ('0' + Math.round(n).toString(16)).slice(-2); }).join(''));
+        return true;
+      });
+    } catch (e) {}
+  }
+
   function goHome(fromHistory) {
     if (!current) return;
     current = null;
     document.body.classList.remove('in-app');
     document.title = "Gerber's Games";
+    paintEdges(null);
     $('loading').classList.remove('on');
     if (!fromHistory && location.hash) history.back();
     render();
