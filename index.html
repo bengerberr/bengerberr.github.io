@@ -78,7 +78,9 @@
   #archiveGrid .add { display: none !important; }
 
   /* ---------- App frames ---------- */
-  #frames { position: fixed; inset: 0; background: var(--bg); visibility: hidden; opacity: 0; transition: opacity .22s; }
+  /* iPhones opened from the home screen make "full height" one status bar short, which left a dark strip
+     at the bottom. 100vh is the real screen height there, and fitFrames() below double-checks it. */
+  #frames { position: fixed; top: 0; left: 0; right: 0; height: 100vh; background: var(--bg); visibility: hidden; opacity: 0; transition: opacity .22s; }
   body.in-app #frames { visibility: visible; opacity: 1; }
   /* Your own home screen pages (Card Club, Golf, Stagescript, Gerber Pay) get the whole screen and are told
      where the clock and home bar are, so they lay out exactly like they do on their own.
@@ -370,6 +372,18 @@
   });
   addEventListener('resize', placeBubble);
   placeBubble();
+
+  function fitFrames() {
+    var h = Math.max(innerHeight, document.documentElement.clientHeight);
+    if (navigator.standalone) {
+      var portrait = innerHeight >= innerWidth;
+      h = Math.max(h, portrait ? Math.max(screen.width, screen.height) : Math.min(screen.width, screen.height));
+    }
+    $('frames').style.height = h + 'px';
+  }
+  addEventListener('resize', fitFrames);
+  addEventListener('orientationchange', function () { setTimeout(fitFrames, 300); });
+  fitFrames();
 
   // ---- edit sheet ----
   function closeSheet() { $('sheet').classList.remove('on'); $('veil').classList.remove('on'); document.activeElement && document.activeElement.blur && document.activeElement.blur(); }
