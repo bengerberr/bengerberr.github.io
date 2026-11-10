@@ -329,6 +329,24 @@
   }
   addEventListener('resize', function () { for (var k in frames) tellSafe(frames[k]); });
 
+  // Apps like Card Club talk to their home screen page by messaging the very top window. Inside the hub
+  // the top window is Gerber's Games, so those messages would be lost and the app would think it's on its
+  // own (that's what showed the "Sign in" link that jumped out of the hub). Pass them on to the right page.
+  window.addEventListener('message', function (e) {
+    if (!e.source || e.source === window) return;
+    for (var k in frames) {
+      try {
+        var w = frames[k].contentWindow, p = e.source, n = 0;
+        if (!w || p === w) continue;
+        while (p && n++ < 10) {
+          if (p.parent === w) { w.dispatchEvent(new MessageEvent('message', { data: e.data, origin: e.origin, source: e.source })); return; }
+          if (p.parent === p || p.parent === window) break;
+          p = p.parent;
+        }
+      } catch (err) {}
+    }
+  });
+
   function goHome(fromHistory) {
     if (!current) return;
     current = null;
