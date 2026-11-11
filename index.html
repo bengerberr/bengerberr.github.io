@@ -187,7 +187,7 @@
     { id: 'deep-dive',   name: "Zorp's Deep Dive", section: 'Games', url: GAS + 'AKfycbykAYhOL1G2FZdy-t6eLugy7XQYE4RzONaNsfg-9zIKVQM1bVmmROsj6mpW_9kXRfhH5A/exec', emoji: '🛸', colour: 'ocean', bar: '#05233b' },
     { id: 'pixel-paint', name: 'Pixel Paint',    section: 'Games',   url: GAS + 'AKfycbztcX_CPxGNqrue4LZ0UY-xfO-TIFV-NBqJv_C8LgkK95duI5Jvqx5_lw6Gac8T9e6D/exec', emoji: '🎨', colour: 'berry', bar: '#2a1430' },
     { id: 'amber',       name: 'Amber Games',    section: 'Games',   url: 'pythonista3://number-le.py?action=run', open: 'app', emoji: '🔢', colour: 'amber' },
-    { id: 'arcade2',     name: 'Arcade²',        section: 'Games',   url: '', emoji: '👾', colour: 'violet' },
+    { id: 'arcade2',     name: 'Arcade²',        section: 'Games',   url: '', emoji: '👾', colour: 'violet', open: 'safari' },
     { id: 'stagescript', name: 'Stagescript',    section: 'Theatre', url: GH + 'stagescript/',  icon: GH + 'stagescript/icon-180.png',  bar: '#141414' },
     { id: 'cricket-360', name: 'Cricket 360',    section: 'Life',    url: GAS + 'AKfycby20fqiT6-jVdXuc28KaERGhaJaD2cyxx-njk3704gMMsh3AdWCmFA77-uW58mln-ae/exec', emoji: '🏏', colour: 'grass', bar: '#0f2f1c' },
     { id: 'gerber-pay',  name: 'Gerber Pay',     section: 'Life',    url: GH + 'gerber-pay/',   icon: GH + 'gerber-pay/icon-180.png',   bar: '#1f3a2e' },
@@ -204,6 +204,12 @@
   var KEY = 'gerbers-games:v1';
   var state = { custom: [], edits: {}, hidden: [], recent: [], order: [], secOrder: [], bubble: { side: 'right', y: 0.72 } };
   try { var s = JSON.parse(localStorage.getItem(KEY) || 'null'); if (s) for (var k in s) state[k] = s[k]; } catch (e) {}
+  // One-off: Arcade² needs your school Google account, which only works when it opens in Safari.
+  if (!state.arcadeSafari) {
+    if (state.edits.arcade2 && state.edits.arcade2.open === 'hub') state.edits.arcade2.open = 'safari';
+    state.arcadeSafari = true;
+    try { localStorage.setItem(KEY, JSON.stringify(state)); } catch (e) {}
+  }
   function save() { try { localStorage.setItem(KEY, JSON.stringify(state)); } catch (e) {} }
 
   function apps() {
@@ -269,10 +275,19 @@
   // ---- opening apps ----
   var frames = {}, order = [], current = null, MAX_OPEN = 4;
 
+  // A school domain turns an Apps Script link into the one that always uses that school's Google account,
+  // even when your personal account is signed in too.
+  function linkFor(a) {
+    var d = (a.domain || '').trim().replace(/^.*@/, '').toLowerCase();
+    if (d && /^https:\/\/script\.google\.com\/macros\/s\//.test(a.url)) return a.url.replace('/macros/s/', '/a/macros/' + d + '/s/');
+    return a.url;
+  }
+
   function openApp(id) {
     var a = find(id);
     if (!a) return;
     if (!a.url) { editSheet(a, true); return; }
+    a = Object.assign({}, a, { url: linkFor(a) });
     state.recent = [id].concat(state.recent.filter(function (r) { return r !== id; })).slice(0, 8); save();
     if (a.open === 'app') { location.href = a.url; setTimeout(render, 400); return; }
     if (a.open === 'safari') { window.open(a.url, '_blank'); render(); return; }
@@ -575,6 +590,8 @@
       (needLink ? '<p class="note">Paste the web app link (for Apps Script it ends in /exec). You only do this once on this phone.</p>' : '') +
       '<label>Name</label><input id="fName" value="' + esc(a.name) + '" placeholder="My app" autocomplete="off">' +
       '<label>Link</label><input id="fUrl" type="url" inputmode="url" autocapitalize="off" autocomplete="off" spellcheck="false" value="' + esc(a.url) + '" placeholder="https://…">' +
+      '<label>School Google account (optional)</label><input id="fDom" type="email" inputmode="email" autocapitalize="off" autocomplete="off" spellcheck="false" value="' + esc(a.domain || '') + '" placeholder="Your school email, or just the bit after @">' +
+      '<p class="note">For Apps Script links made on a school account. Opens with that account instead of your personal one. Works best with Opens: In Safari.</p>' +
       '<div class="row"><div><label>Section</label><select id="fSec">' + secs.map(function (s) { return '<option' + (s === a.section ? ' selected' : '') + '>' + esc(s) + '</option>'; }).join('') + '<option value="__new">New section…</option></select></div>' +
       '<div><label>Opens</label><select id="fOpen"><option value="hub">In Gerber\'s Games</option><option value="safari">In Safari</option><option value="app">In another app</option></select></div></div>' +
       (a.icon ? '' : '<label>Icon</label><div class="colours" id="fEmoji">' + EMOJIS.map(function (em) { return '<button class="sw' + (em === pick.emoji ? ' on' : '') + '" data-e="' + em + '" style="background:rgba(255,255,255,.06);font-size:18px">' + em + '</button>'; }).join('') + '</div>' +
@@ -601,7 +618,7 @@
     $('fSave').onclick = function () {
       var url = $('fUrl').value.trim();
       if (url && !/^[a-z][a-z0-9+.-]*:/i.test(url)) url = 'https://' + url;
-      var data = { name: $('fName').value.trim() || a.name || 'App', url: url, section: $('fSec').value, open: $('fOpen').value };
+      var data = { name: $('fName').value.trim() || a.name || 'App', url: url, section: $('fSec').value, open: $('fOpen').value, domain: $('fDom').value.trim().replace(/^.*@/, '') };
       if (!a.icon) { data.emoji = pick.emoji; data.colour = pick.colour; }
       if (a.custom) {
         var obj = Object.assign({ id: a.id }, data);
