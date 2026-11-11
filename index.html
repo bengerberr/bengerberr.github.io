@@ -275,12 +275,15 @@
   // ---- opening apps ----
   var frames = {}, order = [], current = null, MAX_OPEN = 4;
 
-  // A school domain turns an Apps Script link into the one that always uses that school's Google account,
-  // even when your personal account is signed in too.
+  // Apps that need a particular Google account (Arcade² and your school account) go through Google's
+  // account picker first, with the school email filled in, then on to the app as that account.
   function linkFor(a) {
-    var d = (a.domain || '').trim().replace(/^.*@/, '').toLowerCase();
-    if (d && /^https:\/\/script\.google\.com\/macros\/s\//.test(a.url)) return a.url.replace('/macros/s/', '/a/macros/' + d + '/s/');
-    return a.url;
+    var who = (a.domain || '').trim();
+    if (!who || !/^https:\/\/(script|docs|sites)\.google\.com\//.test(a.url)) return a.url;
+    var email = who.indexOf('@') > 0 ? who : '';
+    var url = a.url;
+    if (email) url += (url.indexOf('?') < 0 ? '?' : '&') + 'authuser=' + encodeURIComponent(email);
+    return 'https://accounts.google.com/AccountChooser?' + (email ? 'Email=' + encodeURIComponent(email) + '&' : '') + 'continue=' + encodeURIComponent(url);
   }
 
   function openApp(id) {
@@ -590,8 +593,8 @@
       (needLink ? '<p class="note">Paste the web app link (for Apps Script it ends in /exec). You only do this once on this phone.</p>' : '') +
       '<label>Name</label><input id="fName" value="' + esc(a.name) + '" placeholder="My app" autocomplete="off">' +
       '<label>Link</label><input id="fUrl" type="url" inputmode="url" autocapitalize="off" autocomplete="off" spellcheck="false" value="' + esc(a.url) + '" placeholder="https://…">' +
-      '<label>School Google account (optional)</label><input id="fDom" type="email" inputmode="email" autocapitalize="off" autocomplete="off" spellcheck="false" value="' + esc(a.domain || '') + '" placeholder="Your school email, or just the bit after @">' +
-      '<p class="note">For Apps Script links made on a school account. Opens with that account instead of your personal one. Works best with Opens: In Safari.</p>' +
+      '<label>Google account to use (optional)</label><input id="fDom" type="email" inputmode="email" autocapitalize="off" autocomplete="off" spellcheck="false" value="' + esc(a.domain || '') + '" placeholder="e.g. your school email">' +
+      '<p class="note">For Google apps that need a certain account, like your school one. Google asks which account first, with this one filled in. Saved on this phone only. Use with Opens: In Safari.</p>' +
       '<div class="row"><div><label>Section</label><select id="fSec">' + secs.map(function (s) { return '<option' + (s === a.section ? ' selected' : '') + '>' + esc(s) + '</option>'; }).join('') + '<option value="__new">New section…</option></select></div>' +
       '<div><label>Opens</label><select id="fOpen"><option value="hub">In Gerber\'s Games</option><option value="safari">In Safari</option><option value="app">In another app</option></select></div></div>' +
       (a.icon ? '' : '<label>Icon</label><div class="colours" id="fEmoji">' + EMOJIS.map(function (em) { return '<button class="sw' + (em === pick.emoji ? ' on' : '') + '" data-e="' + em + '" style="background:rgba(255,255,255,.06);font-size:18px">' + em + '</button>'; }).join('') + '</div>' +
@@ -618,7 +621,7 @@
     $('fSave').onclick = function () {
       var url = $('fUrl').value.trim();
       if (url && !/^[a-z][a-z0-9+.-]*:/i.test(url)) url = 'https://' + url;
-      var data = { name: $('fName').value.trim() || a.name || 'App', url: url, section: $('fSec').value, open: $('fOpen').value, domain: $('fDom').value.trim().replace(/^.*@/, '') };
+      var data = { name: $('fName').value.trim() || a.name || 'App', url: url, section: $('fSec').value, open: $('fOpen').value, domain: $('fDom').value.trim() };
       if (!a.icon) { data.emoji = pick.emoji; data.colour = pick.colour; }
       if (a.custom) {
         var obj = Object.assign({ id: a.id }, data);
