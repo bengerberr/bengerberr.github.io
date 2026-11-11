@@ -1,30 +1,10 @@
 <svg xmlns="http://www.w3.org/2000/svg" width="512" height="512" viewBox="0 0 512 512">
-  <defs>
-    <linearGradient id="sky" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#1c2a22"/><stop offset="1" stop-color="#26372d"/></linearGradient>
-    <linearGradient id="grass" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#3aa857"/><stop offset="1" stop-color="#2a8a45"/></linearGradient>
-    <linearGradient id="wall" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#c3c8cb"/><stop offset="1" stop-color="#a9afb3"/></linearGradient>
-    <clipPath id="ball"><circle r="86"/></clipPath>
-  </defs>
-  <rect width="512" height="512" fill="url(#sky)"/>
-  <path d="M256 34V122M216 66H296" stroke="#f2c94c" stroke-width="16" stroke-linecap="round"/>
-  <rect y="150" width="512" height="190" fill="url(#wall)"/>
-  <g stroke="#959ba0" stroke-width="5">
-    <path d="M0 213H512M0 276H512"/>
-    <path d="M96 150V213M288 150V213M480 150V213M192 213V276M384 213V276M0 213V276M96 276V340M288 276V340M480 276V340"/>
+  <rect width="512" height="512" fill="#2f9e4f"/>
+  <rect y="0" width="512" height="300" fill="#b9bec2"/>
+  <g stroke="#9aa0a5" stroke-width="8">
+    <path d="M0 100H512M0 200H512"/>
+    <path d="M128 0V100M384 0V100M256 100V200M0 100V200M512 100V200M128 200V300M384 200V300"/>
   </g>
-  <rect y="340" width="512" height="172" fill="url(#grass)"/>
-  <g transform="translate(256 352)">
-    <ellipse cx="4" cy="92" rx="72" ry="13" fill="#1d6b35" opacity=".55"/>
-    <circle r="86" fill="#fff"/>
-    <g clip-path="url(#ball)" fill="#1f2a24">
-      <path d="M0 -32L30.4 -9.9L18.8 25.9L-18.8 25.9L-30.4 -9.9Z"/>
-      <g id="p"><path d="M0 -96L30 -74L19 -50L-19 -50L-30 -74Z"/></g>
-      <use href="#p" transform="rotate(72)"/><use href="#p" transform="rotate(144)"/><use href="#p" transform="rotate(216)"/><use href="#p" transform="rotate(288)"/>
-    </g>
-    <g stroke="#1f2a24" stroke-width="5" stroke-linecap="round" fill="none" clip-path="url(#ball)">
-      <path id="s" d="M0 -32V-50"/>
-      <use href="#s" transform="rotate(72)"/><use href="#s" transform="rotate(144)"/><use href="#s" transform="rotate(216)"/><use href="#s" transform="rotate(288)"/>
-    </g>
-    <circle r="86" fill="none" stroke="#dfe3e5" stroke-width="3"/>
-  </g>
+  <circle cx="256" cy="320" r="112" fill="#ffffff"/>
+  <path transform="translate(256 320)" d="M0 -46L43.7 -14.2L27 37.2L-27 37.2L-43.7 -14.2Z" fill="#1f2a24"/>
 </svg>
