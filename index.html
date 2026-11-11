@@ -163,6 +163,14 @@
   .btn { flex: 1; padding: 14px; border-radius: 14px; font-weight: 700; text-align: center; background: rgba(255,255,255,.08); }
   .btn.primary { background: var(--accent); color: #1b1405; }
   .btn.danger { color: #ff7b7b; }
+  .acts { display: flex; flex-direction: column; gap: 2px; margin-top: 4px; background: rgba(255,255,255,.05); border-radius: 16px; overflow: hidden; }
+  .acts button { display: flex; align-items: center; gap: 14px; padding: 15px 16px; font-size: 16px; font-weight: 600; text-align: left; background: rgba(255,255,255,.03); }
+  .acts button:active { background: rgba(255,255,255,.1); }
+  .acts .mi { width: 24px; text-align: center; font-size: 18px; }
+  .sheet-head { display: flex; align-items: center; gap: 14px; margin-bottom: 14px; }
+  .sheet-head .ic { width: 52px; height: 52px; border-radius: 13px; font-size: 26px; animation: none !important; }
+  .sheet-head h3 { margin: 0 !important; }
+  .sheet-head .sub { color: var(--muted); font-size: 13px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; max-width: 62vw; }
   .note { color: var(--muted); font-size: 13px; margin: 8px 0 0; }
 </style>
 </head>
@@ -204,7 +212,7 @@
 
 <script>
 (function () {
-  var HUB_VERSION = '2026-11-11b';   // change this whenever the hub is updated, so open copies offer the update
+  var HUB_VERSION = '2026-11-12a';   // change this whenever the hub is updated, so open copies offer the update
   var GH = 'https://bengerberr.github.io/';
   var GAS = 'https://script.google.com/macros/s/';
 
@@ -477,9 +485,9 @@
   // Long-press an app to change it without going into Edit.
   var pressT = null;
   $('home').addEventListener('touchstart', function (e) {
-    var t = e.target.closest('.app[data-id]');
+    var t = e.target.closest('.app[data-id], .pill[data-id]');
     if (!t || document.body.classList.contains('editing')) return;
-    pressT = setTimeout(function () { pressT = 'fired'; if (navigator.vibrate) navigator.vibrate(10); editSheet(find(t.dataset.id)); }, 550);
+    pressT = setTimeout(function () { pressT = 'fired'; if (navigator.vibrate) navigator.vibrate(10); actionSheet(find(t.dataset.id)); }, 550);
   }, { passive: true });
   ['touchend', 'touchmove', 'touchcancel'].forEach(function (ev) {
     $('home').addEventListener(ev, function (e) {
@@ -699,6 +707,58 @@
   // ---- edit sheet ----
   function closeSheet() { $('sheet').classList.remove('on'); $('veil').classList.remove('on'); document.activeElement && document.activeElement.blur && document.activeElement.blur(); }
   $('veil').onclick = closeSheet;
+
+  // ---- long-press menu: open, share, copy link, change, archive ----
+  // The link to give someone: your home screen pages for your own apps, otherwise the app's own link.
+  function shareLink(a) {
+    if (!a.url || /^(?!https?:)[a-z0-9+.-]+:/i.test(a.url)) return '';   // e.g. Amber Games opens Pythonista: nothing to share
+    return a.url;
+  }
+  function copyText(t) {
+    if (navigator.clipboard && navigator.clipboard.writeText) return navigator.clipboard.writeText(t);
+    var ta = document.createElement('textarea'); ta.value = t; ta.setAttribute('readonly', '');
+    ta.style.position = 'fixed'; ta.style.opacity = '0'; document.body.appendChild(ta); ta.select();
+    try { document.execCommand('copy'); } catch (e) {}
+    ta.remove(); return Promise.resolve();
+  }
+  function actionSheet(a) {
+    if (!a) return;
+    var link = shareLink(a), archived = state.hidden.indexOf(a.id) >= 0;
+    var acts = [['open', '▶', a.url ? 'Open' : 'Add link']];
+    if (link) { acts.push(['share', '⤴', 'Share']); acts.push(['copy', '⧉', 'Copy link']); }
+    if (frames[a.id]) { acts.push(['reload', '↻', 'Reload']); acts.push(['close', '✕', 'Close']); }
+    acts.push(['edit', '✎', 'Change name, link or icon']);
+    acts.push(['archive', '🗄️', archived ? 'Unarchive' : 'Archive']);
+    $('sheet').innerHTML = '<div class="grab"></div><div class="sheet-head">' + iconHTML(a) + '<div><h3>' + esc(a.name) + '</h3>' +
+      (link ? '<div class="sub">' + esc(link.replace(/^https?:\/\//, '')) + '</div>' : '') + '</div></div>' +
+      '<div class="acts">' + acts.map(function (x) { return '<button data-act="' + x[0] + '"><span class="mi">' + x[1] + '</span>' + esc(x[2]) + '</button>'; }).join('') + '</div>';
+    $('sheet').querySelectorAll('[data-act]').forEach(function (btn) {
+      btn.onclick = function () {
+        var act = btn.dataset.act;
+        if (act === 'share') {
+          if (navigator.share) navigator.share({ title: a.name, url: link }).catch(function () {});
+          else copyText(link).then(function () { toast('Link copied'); });
+          closeSheet(); return;
+        }
+        if (act === 'copy') { copyText(link).then(function () { toast('Link copied'); }, function () { toast("Couldn't copy"); }); closeSheet(); return; }
+        if (act === 'edit') { editSheet(a); return; }
+        closeSheet();
+        if (act === 'open') openApp(a.id);
+        else if (act === 'reload') { openApp(a.id); reloadApp(a.id); }
+        else if (act === 'close') {
+          if (frames[a.id]) { frames[a.id].remove(); delete frames[a.id]; }
+          order = order.filter(function (o) { return o !== a.id; });
+          render(); toast(a.name + ' closed');
+        } else if (act === 'archive') {
+          if (archived) state.hidden = state.hidden.filter(function (h) { return h !== a.id; });
+          else state.hidden.push(a.id);
+          save(); render(); toast(a.name + (archived ? ' is back' : ' archived'));
+        }
+      };
+    });
+    $('veil').classList.add('on');
+    $('sheet').classList.add('on');
+  }
 
   function editSheet(a, needLink) {
     var isNew = !a;
