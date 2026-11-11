@@ -5,6 +5,7 @@ Home screen pages for Ben's Apps Script web apps. iPhones take the icon and name
 | Page | App |
 |---|---|
 | [/](https://bengerberr.github.io/) | Gerber's Games: home screen hub that opens all the other apps |
+| [/bobble-ball/](https://bengerberr.github.io/bobble-ball/) | Bobble Ball: scores, stats, seasons and the Book of Bobble |
 | [/emperor-scum/](https://bengerberr.github.io/emperor-scum/) | Card Club: Emperor Scum and Golf |
 | [/gerber-pay/](https://bengerberr.github.io/gerber-pay/) | Gerber Pay (private: the app link is never stored here) |
 | [/stagescript/](https://bengerberr.github.io/stagescript/) | Stagescript prompt book |

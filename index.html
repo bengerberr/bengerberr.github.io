@@ -98,7 +98,7 @@
      exactly the drawable area, and nothing gets hidden under that strip. */
   #frames { position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: var(--bg); visibility: hidden; opacity: 0; transition: opacity .22s; }
   body.in-app #frames { visibility: visible; opacity: 1; }
-  /* Your own home screen pages (Card Club, Golf, Stagescript, Gerber Pay) get the whole screen and are told
+  /* Your own home screen pages (Card Club, Golf, Bobble Ball, Stagescript, Gerber Pay) get the whole screen and are told
      where the clock and home bar are, so they lay out exactly like they do on their own.
      Apps Script links can't be told that, so they only keep clear of the clock. */
   #frames iframe { position: absolute; left: 0; right: 0; top: var(--st); bottom: var(--eb, 0px); width: 100%;
@@ -184,6 +184,7 @@
   var BUILT_IN = [
     { id: 'card-club',   name: 'Card Club',      section: 'Games',   url: GH + 'emperor-scum/', icon: GH + 'emperor-scum/icon-180.png', bar: '#0a4229' },
     { id: 'golf',        name: 'Golf',           section: 'Games',   url: GH + 'golf/',         icon: GH + 'golf/icon-180.png',         bar: '#2f6b35' },
+    { id: 'bobble-ball', name: 'Bobble Ball',    section: 'Games',   url: GH + 'bobble-ball/',  icon: GH + 'bobble-ball/icon-180.png',  bar: '#120e0c' },
     { id: 'games-night', name: 'Games Night',    section: 'Games',   url: GAS + 'AKfycbxD-wGuTSZdIHa77KTrXsg8ZexzoElYaNLqgyRa7Cig93h9icQ7MhbDXYHqooYghhxtnQ/exec', icon: GH + 'games-night/icon-180.png', bar: '#08150e' },
     { id: 'deep-dive',   name: "Zorp's Deep Dive", section: 'Games', url: GAS + 'AKfycbykAYhOL1G2FZdy-t6eLugy7XQYE4RzONaNsfg-9zIKVQM1bVmmROsj6mpW_9kXRfhH5A/exec', emoji: '🛸', colour: 'ocean', bar: '#021022' },
     { id: 'pixel-paint', name: 'Pixel Paint',    section: 'Games',   url: GAS + 'AKfycbztcX_CPxGNqrue4LZ0UY-xfO-TIFV-NBqJv_C8LgkK95duI5Jvqx5_lw6Gac8T9e6D/exec', emoji: '🎨', colour: 'berry', bar: '#fff1cc' },
