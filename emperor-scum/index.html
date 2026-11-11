@@ -89,7 +89,8 @@
     }
     function safe() {
       var cs = getComputedStyle(document.getElementById('safe'));
-      return { t: parseFloat(cs.paddingTop) || 0, b: parseFloat(cs.paddingBottom) || 0, l: parseFloat(cs.paddingLeft) || 0, r: parseFloat(cs.paddingRight) || 0 };
+      return { t: parseFloat(cs.paddingTop) || 0, b: parseFloat(cs.paddingBottom) || 0, l: parseFloat(cs.paddingLeft) || 0, r: parseFloat(cs.paddingRight) || 0,
+        h: window.innerHeight, w: window.innerWidth };
     }
     function sendSafe() { if (app) app.postMessage({ type: 'cc-safe', safe: safe() }, appOrigin); }
     window.addEventListener('resize', function () { setTimeout(sendSafe, 120); });
