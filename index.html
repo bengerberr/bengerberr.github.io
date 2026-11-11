@@ -119,6 +119,27 @@
   body.in-app #bubble { display: grid; }
   #bubble.drag { opacity: 1; transition: none; }
   #bubble svg { width: 22px; height: 22px; }
+  #bubble { -webkit-touch-callout: none; }
+  #bubble.held { transform: scale(1.15); transition: transform .15s; }
+
+  /* Hold the home button: reload or close the open app. */
+  #appMenu { position: fixed; z-index: 25; min-width: 210px; padding: 6px; border-radius: 16px; display: none;
+    background: rgba(28,33,46,.92); -webkit-backdrop-filter: blur(18px); backdrop-filter: blur(18px);
+    border: 1px solid rgba(255,255,255,.14); box-shadow: 0 14px 40px rgba(0,0,0,.5); }
+  #appMenu.on { display: block; }
+  #appMenu button { display: flex; align-items: center; gap: 12px; width: 100%; padding: 12px 12px; border-radius: 11px;
+    font-size: 16px; font-weight: 600; text-align: left; }
+  #appMenu button:active { background: rgba(255,255,255,.1); }
+  #appMenu .mi { width: 22px; text-align: center; font-size: 18px; }
+  #menuVeil { position: fixed; inset: 0; z-index: 24; display: none; }
+  #menuVeil.on { display: block; }
+
+  #toast { position: fixed; z-index: 50; left: 50%; top: calc(var(--st) + 12px); transform: translate(-50%, -150%);
+    padding: 10px 16px; border-radius: 14px; background: rgba(28,33,46,.94); border: 1px solid rgba(255,255,255,.14);
+    font-size: 14px; font-weight: 600; white-space: nowrap; transition: transform .3s cubic-bezier(.2,.8,.2,1);
+    -webkit-backdrop-filter: blur(14px); backdrop-filter: blur(14px); box-shadow: 0 8px 24px rgba(0,0,0,.4); }
+  #toast.on { transform: translate(-50%, 0); }
+  #toast.tap { color: var(--accent); }
 
   /* ---------- Sheet ---------- */
   #veil { position: fixed; inset: 0; z-index: 30; background: rgba(0,0,0,.5); opacity: 0; pointer-events: none; transition: opacity .2s; }
@@ -171,11 +192,19 @@
   </svg>
 </button>
 
+<div id="menuVeil"></div>
+<div id="appMenu">
+  <button id="mReload"><span class="mi">↻</span><span id="mReloadTxt">Reload</span></button>
+  <button id="mClose"><span class="mi">✕</span><span id="mCloseTxt">Close</span></button>
+  <button id="mHome"><span class="mi">⌂</span><span>Back to Gerber's Games</span></button>
+</div>
+<button id="toast"></button>
 <div id="veil"></div>
 <div id="sheet"></div>
 
 <script>
 (function () {
+  var HUB_VERSION = '2026-11-11b';   // change this whenever the hub is updated, so open copies offer the update
   var GH = 'https://bengerberr.github.io/';
   var GAS = 'https://script.google.com/macros/s/';
 
@@ -548,27 +577,99 @@
     b.style.left = (state.bubble.side === 'left' ? m : W - s - m) + 'px';
   }
   b.addEventListener('pointerdown', function (e) {
-    drag = { x: e.clientX, y: e.clientY, moved: false, ox: b.offsetLeft, oy: b.offsetTop };
+    drag = { x: e.clientX, y: e.clientY, moved: false, held: false, ox: b.offsetLeft, oy: b.offsetTop };
     b.setPointerCapture(e.pointerId);
+    drag.timer = setTimeout(function () {
+      if (!drag || drag.moved) return;
+      drag.held = true; b.classList.add('held');
+      if (navigator.vibrate) navigator.vibrate(12);
+      showMenu();
+    }, 500);
   });
+  b.addEventListener('contextmenu', function (e) { e.preventDefault(); });
   b.addEventListener('pointermove', function (e) {
-    if (!drag) return;
+    if (!drag || drag.held) return;
     var dx = e.clientX - drag.x, dy = e.clientY - drag.y;
     if (!drag.moved && Math.abs(dx) + Math.abs(dy) < 8) return;
+    clearTimeout(drag.timer);
     drag.moved = true; b.classList.add('drag');
     b.style.left = (drag.ox + dx) + 'px'; b.style.top = (drag.oy + dy) + 'px';
   });
   b.addEventListener('pointerup', function (e) {
     if (!drag) return;
-    b.classList.remove('drag');
+    clearTimeout(drag.timer);
+    b.classList.remove('drag'); b.classList.remove('held');
+    if (drag.held) { drag = null; return; }
     if (drag.moved) {
       state.bubble = { side: e.clientX < innerWidth / 2 ? 'left' : 'right', y: b.offsetTop / innerHeight };
       save(); placeBubble();
     } else goHome();
     drag = null;
   });
+  b.addEventListener('pointercancel', function () { if (drag) clearTimeout(drag.timer); b.classList.remove('drag', 'held'); drag = null; });
   addEventListener('resize', placeBubble);
   placeBubble();
+
+  // ---- reload / close the open app ----
+  function showMenu() {
+    var a = find(current);
+    if (!a) return;
+    $('mReloadTxt').textContent = 'Reload ' + a.name;
+    $('mCloseTxt').textContent = 'Close ' + a.name;
+    var m = $('appMenu'), r = b.getBoundingClientRect();
+    m.classList.add('on');
+    var mw = m.offsetWidth, mh = m.offsetHeight;
+    m.style.left = Math.min(Math.max(10, r.left + r.width / 2 - mw / 2), innerWidth - mw - 10) + 'px';
+    m.style.top = (r.top - mh - 10 > 40 ? r.top - mh - 10 : r.bottom + 10) + 'px';
+    $('menuVeil').classList.add('on');
+  }
+  function hideMenu() { $('appMenu').classList.remove('on'); $('menuVeil').classList.remove('on'); }
+  $('menuVeil').addEventListener('click', hideMenu);
+  $('mHome').onclick = function () { hideMenu(); goHome(); };
+  $('mReload').onclick = function () { hideMenu(); reloadApp(current); };
+  $('mClose').onclick = function () { hideMenu(); closeApp(current); };
+
+  // Loads the app again from scratch, picking up any new code.
+  function reloadApp(id) {
+    var f = frames[id], a = find(id);
+    if (!f || !a) return;
+    $('loading').classList.add('on');
+    toast('Reloading ' + a.name + '…');
+    try { f.contentWindow.location.reload(); }               // your own pages: a proper fresh reload
+    catch (e) { f.src = 'about:blank'; setTimeout(function () { f.src = f.dataset.url; }, 50); }   // Google-hosted apps
+    if (f.classList.contains('full')) watchSafe(f);
+  }
+  function closeApp(id) {
+    var a = find(id);
+    if (frames[id]) { frames[id].remove(); delete frames[id]; }
+    order = order.filter(function (o) { return o !== id; });
+    goHome();
+    if (a) toast(a.name + ' closed');
+  }
+
+  var toastT = null;
+  function toast(msg, onTap) {
+    var t = $('toast');
+    t.textContent = msg; t.classList.toggle('tap', !!onTap);
+    t.onclick = onTap || null;
+    t.classList.add('on');
+    clearTimeout(toastT);
+    if (!onTap) toastT = setTimeout(function () { t.classList.remove('on'); }, 2200);
+  }
+
+  // ---- updates to Gerber's Games itself ----
+  // When you come back to the hub, it checks whether a newer version has been published and offers it.
+  function checkForUpdate() {
+    if (!window.fetch || location.protocol !== 'https:') return;
+    fetch(location.pathname + '?check=' + Date.now(), { cache: 'no-store' }).then(function (res) { return res.ok ? res.text() : null; })
+      .then(function (txt) {
+        if (!txt) return;
+        var m = txt.match(/var HUB_VERSION = '([^']+)'/);
+        if (m && m[1] !== HUB_VERSION) toast('New version ready. Tap to update', function () { location.reload(); });
+      }).catch(function () {});
+  }
+  document.addEventListener('visibilitychange', function () { if (!document.hidden) checkForUpdate(); });
+  setTimeout(checkForUpdate, 3000);
 
   function standalone() {
     return navigator.standalone === true || (window.matchMedia && matchMedia('(display-mode: standalone)').matches);
