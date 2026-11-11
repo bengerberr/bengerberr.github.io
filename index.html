@@ -51,7 +51,9 @@
   .app:active .ic { transform: scale(.9); filter: brightness(.85); }
   .ic { width: 62px; height: 62px; border-radius: 16px; display: grid; place-items: center; font-size: 32px; overflow: hidden;
     box-shadow: 0 6px 16px rgba(0,0,0,.35), inset 0 0 0 .5px rgba(255,255,255,.12); transition: transform .15s, filter .15s; position: relative; }
-  .ic img { width: 100%; height: 100%; display: block; }
+  .ic img { width: 100%; height: 100%; display: block; pointer-events: none; -webkit-user-drag: none; -webkit-touch-callout: none; }
+  /* Stop the iPhone's own image menu (Share, Save to Photos…) so holding an app shows ours. */
+  .app, .pill, .ic { -webkit-touch-callout: none; -webkit-user-select: none; user-select: none; }
   .ic.empty { opacity: .45; }
   .name { font-size: 12px; font-weight: 500; max-width: 100%; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; color: #dfe3ec; }
   .dot { position: absolute; bottom: -1px; left: 50%; width: 5px; height: 5px; margin-left: -2.5px; border-radius: 50%; background: var(--text); opacity: 0; }
@@ -212,7 +214,7 @@
 
 <script>
 (function () {
-  var HUB_VERSION = '2026-11-12a';   // change this whenever the hub is updated, so open copies offer the update
+  var HUB_VERSION = '2026-11-12b';   // change this whenever the hub is updated, so open copies offer the update
   var GH = 'https://bengerberr.github.io/';
   var GAS = 'https://script.google.com/macros/s/';
 
@@ -271,7 +273,7 @@
   function esc(s) { return String(s == null ? '' : s).replace(/[&<>"']/g, function (c) { return '&#' + c.charCodeAt(0) + ';'; }); }
 
   function iconHTML(a) {
-    if (a.icon) return '<div class="ic"><img src="' + esc(a.icon) + '" alt="" loading="lazy"></div>';
+    if (a.icon) return '<div class="ic"><img src="' + esc(a.icon) + '" alt="" loading="lazy" draggable="false"></div>';
     var c = COLOURS[a.colour] || COLOURS.slate;
     return '<div class="ic' + (a.url ? '' : ' empty') + '" style="background:linear-gradient(160deg,' + c[0] + ',' + c[1] + ')">' + esc(a.emoji || '⭐') + '</div>';
   }
