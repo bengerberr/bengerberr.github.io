@@ -137,11 +137,13 @@
   #menuVeil { position: fixed; inset: 0; z-index: 24; display: none; }
   #menuVeil.on { display: block; }
 
-  #toast { position: fixed; z-index: 50; left: 50%; top: calc(var(--st) + 12px); transform: translate(-50%, -150%);
+  /* Hidden: slid right off the top and invisible, so an empty bar never peeks out under the clock. */
+  #toast { position: fixed; z-index: 50; left: 50%; top: calc(var(--st) + 12px); transform: translate(-50%, calc(-100% - var(--st) - 40px));
+    opacity: 0; visibility: hidden; pointer-events: none;
     padding: 10px 16px; border-radius: 14px; background: rgba(28,33,46,.94); border: 1px solid rgba(255,255,255,.14);
-    font-size: 14px; font-weight: 600; white-space: nowrap; transition: transform .3s cubic-bezier(.2,.8,.2,1);
+    font-size: 14px; font-weight: 600; white-space: nowrap; transition: transform .3s cubic-bezier(.2,.8,.2,1), opacity .2s, visibility 0s linear .3s;
     -webkit-backdrop-filter: blur(14px); backdrop-filter: blur(14px); box-shadow: 0 8px 24px rgba(0,0,0,.4); }
-  #toast.on { transform: translate(-50%, 0); }
+  #toast.on { transform: translate(-50%, 0); opacity: 1; visibility: visible; pointer-events: auto; transition: transform .3s cubic-bezier(.2,.8,.2,1), opacity .2s, visibility 0s; }
   #toast.tap { color: var(--accent); }
 
   /* ---------- Sheet ---------- */
