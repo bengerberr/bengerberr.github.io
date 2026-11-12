@@ -14,6 +14,7 @@
 <link rel="apple-touch-icon" href="https://bengerberr.github.io/icon-180.png">
 <link rel="icon" type="image/png" href="https://bengerberr.github.io/icon-192.png">
 <link rel="manifest" href="manifest.webmanifest">
+<script src="qrcode.min.js" defer></script>
 <style>
   :root {
     --bg: #0d1117; --bg2: #161b26; --card: rgba(255,255,255,.06); --line: rgba(255,255,255,.09);
@@ -173,6 +174,8 @@
   .sheet-head .ic { width: 52px; height: 52px; border-radius: 13px; font-size: 26px; animation: none !important; }
   .sheet-head h3 { margin: 0 !important; }
   .sheet-head .sub { color: var(--muted); font-size: 13px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; max-width: 62vw; }
+  .qr-wrap { background: #fff; border-radius: 20px; padding: 10px; margin: 4px auto 14px; max-width: 320px; }
+  .qr-wrap img { display: block; width: 100%; height: auto; border-radius: 12px; -webkit-touch-callout: default; }
   .note { color: var(--muted); font-size: 13px; margin: 8px 0 0; }
 </style>
 </head>
@@ -214,7 +217,7 @@
 
 <script>
 (function () {
-  var HUB_VERSION = '2026-11-12b';   // change this whenever the hub is updated, so open copies offer the update
+  var HUB_VERSION = '2026-11-12c';   // change this whenever the hub is updated, so open copies offer the update
   var GH = 'https://bengerberr.github.io/';
   var GAS = 'https://script.google.com/macros/s/';
 
@@ -727,7 +730,7 @@
     if (!a) return;
     var link = shareLink(a), archived = state.hidden.indexOf(a.id) >= 0;
     var acts = [['open', '▶', a.url ? 'Open' : 'Add link']];
-    if (link) { acts.push(['share', '⤴', 'Share']); acts.push(['copy', '⧉', 'Copy link']); }
+    if (link) { acts.push(['share', '⤴', 'Share']); acts.push(['qr', '▦', 'QR code']); acts.push(['copy', '⧉', 'Copy link']); }
     if (frames[a.id]) { acts.push(['reload', '↻', 'Reload']); acts.push(['close', '✕', 'Close']); }
     acts.push(['edit', '✎', 'Change name, link or icon']);
     acts.push(['archive', '🗄️', archived ? 'Unarchive' : 'Archive']);
@@ -744,6 +747,7 @@
         }
         if (act === 'copy') { copyText(link).then(function () { toast('Link copied'); }, function () { toast("Couldn't copy"); }); closeSheet(); return; }
         if (act === 'edit') { editSheet(a); return; }
+        if (act === 'qr') { qrSheet(a, link); return; }
         closeSheet();
         if (act === 'open') openApp(a.id);
         else if (act === 'reload') { openApp(a.id); reloadApp(a.id); }
@@ -758,6 +762,75 @@
         }
       };
     });
+    $('veil').classList.add('on');
+    $('sheet').classList.add('on');
+  }
+
+  // ---- QR code: a card people can scan to open the app, saveable as a picture ----
+  function rr(c, x, y, w, h, r) { c.beginPath(); c.moveTo(x + r, y); c.arcTo(x + w, y, x + w, y + h, r); c.arcTo(x + w, y + h, x, y + h, r); c.arcTo(x, y + h, x, y, r); c.arcTo(x, y, x + w, y, r); c.closePath(); }
+  function loadImg(src) {
+    return new Promise(function (ok) { if (!src) return ok(null); var im = new Image(); im.onload = function () { ok(im); }; im.onerror = function () { ok(null); }; im.src = src; });
+  }
+  function qrCard(a, link) {
+    var q = qrcode(0, 'M'); q.addData(link); q.make();
+    var n = q.getModuleCount(), W = 1080, H = 1350, qs = 820, cell = Math.floor(qs / (n + 8)), size = cell * (n + 8);
+    var cv = document.createElement('canvas'); cv.width = W; cv.height = H;
+    var c = cv.getContext('2d');
+    c.fillStyle = '#ffffff'; c.fillRect(0, 0, W, H);
+    return loadImg(a.icon).then(function (im) {
+      // icon + name
+      var isz = 150, ix = 90, iy = 80;
+      c.save(); rr(c, ix, iy, isz, isz, 36); c.clip();
+      var drew = false;
+      if (im) { try { c.drawImage(im, ix, iy, isz, isz); c.getImageData(ix, iy, 1, 1); drew = true; } catch (e) { drew = false; } }
+      if (!drew) {
+        var col = COLOURS[a.colour] || COLOURS.slate, g = c.createLinearGradient(ix, iy, ix + isz, iy + isz);
+        g.addColorStop(0, col[0]); g.addColorStop(1, col[1]); c.fillStyle = g; c.fillRect(ix, iy, isz, isz);
+        c.font = '90px -apple-system, "Apple Color Emoji", sans-serif'; c.textAlign = 'center'; c.textBaseline = 'middle';
+        c.fillText(a.emoji || '⭐', ix + isz / 2, iy + isz / 2 + 6);
+      }
+      c.restore();
+      c.textAlign = 'left'; c.textBaseline = 'alphabetic'; c.fillStyle = '#10131a';
+      var fs = 76; c.font = '800 ' + fs + 'px -apple-system, system-ui, sans-serif';
+      while (c.measureText(a.name).width > W - 300 && fs > 40) { fs -= 4; c.font = '800 ' + fs + 'px -apple-system, system-ui, sans-serif'; }
+      c.fillText(a.name, 270, iy + 98);
+      c.fillStyle = '#7a8296'; c.font = '500 36px -apple-system, system-ui, sans-serif';
+      c.fillText("Gerber's Games", 272, iy + 146);
+      // QR
+      var qx = Math.round((W - size) / 2), qy = 300;
+      c.fillStyle = '#10131a';
+      for (var r = 0; r < n; r++) for (var k = 0; k < n; k++) if (q.isDark(r, k)) c.fillRect(qx + (k + 4) * cell, qy + (r + 4) * cell, cell, cell);
+      // caption
+      c.textAlign = 'center'; c.fillStyle = '#10131a'; c.font = '700 48px -apple-system, system-ui, sans-serif';
+      c.fillText('Scan to open ' + a.name, W / 2, qy + size + 70);
+      c.fillStyle = '#7a8296'; c.font = '400 30px -apple-system, system-ui, sans-serif';
+      var short = link.replace(/^https?:\/\//, ''); if (short.length > 52) short = short.slice(0, 50) + '…';
+      c.fillText(short, W / 2, qy + size + 120);
+      return cv;
+    });
+  }
+  function qrSheet(a, link) {
+    if (typeof qrcode !== 'function') { toast("QR maker didn't load, try again in a sec"); return; }
+    $('sheet').innerHTML = '<div class="grab"></div><h3>' + esc(a.name) + ' QR code</h3>' +
+      '<div class="qr-wrap"><img id="qrImg" alt="QR code for ' + esc(a.name) + '"></div>' +
+      '<p class="note" style="text-align:center;margin:-4px 0 6px">Point a phone camera at it to open ' + esc(a.name) + '. You can also hold the picture to save it.</p>' +
+      '<div class="actions"><button class="btn" id="qrDone">Done</button><button class="btn primary" id="qrSave">Save image</button></div>';
+    $('qrDone').onclick = closeSheet;
+    var blob = null, fname = a.name.replace(/[^a-z0-9]+/gi, '-').replace(/^-|-$/g, '') + '-QR.png';
+    qrCard(a, link).then(function (cv) {
+      $('qrImg').src = cv.toDataURL('image/png');
+      try { cv.toBlob(function (b) { blob = b; }, 'image/png'); } catch (e) {}
+    });
+    $('qrSave').onclick = function () {
+      var img = $('qrImg');
+      if (!img.src) return;
+      var file = blob && window.File ? new File([blob], fname, { type: 'image/png' }) : null;
+      if (file && navigator.canShare && navigator.canShare({ files: [file] })) {
+        navigator.share({ files: [file], title: a.name + ' QR code' }).catch(function () {});   // pick "Save Image" in the share sheet
+      } else {
+        var dl = document.createElement('a'); dl.href = img.src; dl.download = fname; document.body.appendChild(dl); dl.click(); dl.remove();
+      }
+    };
     $('veil').classList.add('on');
     $('sheet').classList.add('on');
   }
