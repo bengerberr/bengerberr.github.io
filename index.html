@@ -219,7 +219,7 @@
 
 <script>
 (function () {
-  var HUB_VERSION = '2026-11-12c';   // change this whenever the hub is updated, so open copies offer the update
+  var HUB_VERSION = '2026-11-16a';   // change this whenever the hub is updated, so open copies offer the update
   var GH = 'https://bengerberr.github.io/';
   var GAS = 'https://script.google.com/macros/s/';
 
@@ -232,7 +232,7 @@
     { id: 'games-night', name: 'Games Night',    section: 'Games',   url: GAS + 'AKfycbxD-wGuTSZdIHa77KTrXsg8ZexzoElYaNLqgyRa7Cig93h9icQ7MhbDXYHqooYghhxtnQ/exec', icon: GH + 'games-night/icon-180.png', bar: '#08150e' },
     { id: 'deep-dive',   name: "Zorp's Deep Dive", section: 'Games', url: GAS + 'AKfycbykAYhOL1G2FZdy-t6eLugy7XQYE4RzONaNsfg-9zIKVQM1bVmmROsj6mpW_9kXRfhH5A/exec', emoji: '🛸', colour: 'ocean', bar: '#021022' },
     { id: 'pixel-paint', name: 'Pixel Paint',    section: 'Games',   url: GAS + 'AKfycbztcX_CPxGNqrue4LZ0UY-xfO-TIFV-NBqJv_C8LgkK95duI5Jvqx5_lw6Gac8T9e6D/exec', emoji: '🎨', colour: 'berry', bar: '#fff1cc' },
-    { id: 'amber',       name: 'Amber Games',    section: 'Games',   url: 'pythonista3://number-le.py?action=run', open: 'app', emoji: '🔢', colour: 'amber' },
+    { id: 'amber',       name: 'Amber Games',    section: 'Games',   url: GH + 'amber-games/',  icon: GH + 'amber-games/icon-180.png',  bar: '#121213' },
     { id: 'arcade2',     name: 'Arcade²',        section: 'Games',   url: '', emoji: '👾', colour: 'violet', open: 'safari' },
     { id: 'stagescript', name: 'Stagescript',    section: 'Theatre', url: GH + 'stagescript/',  icon: GH + 'stagescript/icon-180.png',  bar: '#141414' },
     { id: 'cricket-360', name: 'Cricket 360',    section: 'Life',    url: GAS + 'AKfycby20fqiT6-jVdXuc28KaERGhaJaD2cyxx-njk3704gMMsh3AdWCmFA77-uW58mln-ae/exec', emoji: '🏏', colour: 'grass', bar: '#0b2d1f' },
@@ -254,6 +254,12 @@
   if (!state.arcadeSafari) {
     if (state.edits.arcade2 && state.edits.arcade2.open === 'hub') state.edits.arcade2.open = 'safari';
     state.arcadeSafari = true;
+    try { localStorage.setItem(KEY, JSON.stringify(state)); } catch (e) {}
+  }
+  // One-off: Amber Games moved from Pythonista to the web, so drop any old link saved on this phone.
+  if (!state.amberWeb) {
+    if (state.edits.amber) { delete state.edits.amber.url; delete state.edits.amber.open; }
+    state.amberWeb = true;
     try { localStorage.setItem(KEY, JSON.stringify(state)); } catch (e) {}
   }
   function save() { try { localStorage.setItem(KEY, JSON.stringify(state)); } catch (e) {} }
