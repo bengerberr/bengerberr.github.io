@@ -227,21 +227,21 @@
   //       'safari' opens it in Safari, 'app' hands the link to another app (Pythonista).
   var BUILT_IN = [
     { id: 'card-club',   name: 'Card Club',      section: 'Games',   url: GH + 'emperor-scum/', icon: GH + 'emperor-scum/icon-180.png', bar: '#0a4229' },
-    { id: 'golf',        name: 'Golf',           section: 'Games',   url: GH + 'golf/',         icon: GH + 'golf/icon-180.png',         bar: '#2f6b35' },
-    { id: 'bobble-ball', name: 'Bobble Ball',    section: 'Games',   url: GH + 'bobble-ball/',  icon: GH + 'bobble-ball/icon-180.png',  bar: '#3d7a55' },
-    { id: 'games-night', name: 'Games Night',    section: 'Games',   url: GAS + 'AKfycbxD-wGuTSZdIHa77KTrXsg8ZexzoElYaNLqgyRa7Cig93h9icQ7MhbDXYHqooYghhxtnQ/exec', icon: GH + 'games-night/icon-180.png', bar: '#08150e' },
     { id: 'deep-dive',   name: "Zorp's Deep Dive", section: 'Games', url: GAS + 'AKfycbykAYhOL1G2FZdy-t6eLugy7XQYE4RzONaNsfg-9zIKVQM1bVmmROsj6mpW_9kXRfhH5A/exec', emoji: '🛸', colour: 'ocean', bar: '#021022' },
     { id: 'pixel-paint', name: 'Pixel Paint',    section: 'Games',   url: GAS + 'AKfycbztcX_CPxGNqrue4LZ0UY-xfO-TIFV-NBqJv_C8LgkK95duI5Jvqx5_lw6Gac8T9e6D/exec', emoji: '🎨', colour: 'berry', bar: '#fff1cc' },
-    { id: 'amber',       name: 'Amber Games',    section: 'Games',   url: GH + 'amber-games/',  icon: GH + 'amber-games/icon-180.png',  bar: '#121213' },
-    { id: 'arcade2',     name: 'Arcade²',        section: 'Games',   url: '', emoji: '👾', colour: 'violet', open: 'safari' },
+    { id: 'gerber-pay',  name: 'Gerber Pay',     section: 'Life',    url: GH + 'gerber-pay/',   icon: GH + 'gerber-pay/icon-180.png',   bar: '#1f3a2e' },
+    { id: 'bobble-ball', name: 'Bobble Ball',    section: 'Life',   url: GH + 'bobble-ball/',  icon: GH + 'bobble-ball/icon-180.png',  bar: '#3d7a55' },
+    { id: 'six-at-six',  name: '6 at 6',         section: 'Life',    url: GH + 'six-at-six/',   icon: GH + 'six-at-six/icon-180.png',   bar: '#0b0b0c' },
+    { id: 'cricket-360', name: 'Cricket 360',    section: 'Life',    url: GAS + 'AKfycby20fqiT6-jVdXuc28KaERGhaJaD2cyxx-njk3704gMMsh3AdWCmFA77-uW58mln-ae/exec', emoji: '🏏', colour: 'grass', bar: '#0b2d1f' },
+    { id: 'arcade2',     name: 'Arcade²',        section: 'School',   url: '', emoji: '👾', colour: 'violet', open: 'safari' },
+    { id: 'amber',       name: 'Amber Games',    section: 'School',   url: GH + 'amber-games/',  icon: GH + 'amber-games/icon-180.png',  bar: '#121213' },
     { id: 'wheres-sloth', name: 'Sloth', section: 'School', url: GAS + 'AKfycbwujQDWPRB4tmPlZR2oEubscT3Llf-FAFS2zACLMY7fbmmFyzKZR5bTy5YpkP-6xTXM/exec', emoji: '🦥', colour: 'grass', bar: '#f6f8f3' },
     { id: 'stagescript', name: 'Stagescript',    section: 'Theatre', url: GH + 'stagescript/',  icon: GH + 'stagescript/icon-180.png',  bar: '#141414' },
-    { id: 'cricket-360', name: 'Cricket 360',    section: 'Life',    url: GAS + 'AKfycby20fqiT6-jVdXuc28KaERGhaJaD2cyxx-njk3704gMMsh3AdWCmFA77-uW58mln-ae/exec', emoji: '🏏', colour: 'grass', bar: '#0b2d1f' },
-    { id: 'gerber-pay',  name: 'Gerber Pay',     section: 'Life',    url: GH + 'gerber-pay/',   icon: GH + 'gerber-pay/icon-180.png',   bar: '#1f3a2e' },
-    { id: 'six-at-six',  name: '6 at 6',         section: 'Life',    url: GH + 'six-at-six/',   icon: GH + 'six-at-six/icon-180.png',   bar: '#0b0b0c' },
-    { id: 'habit-quest', name: 'Habit Quest',    section: 'Life',    url: '', emoji: '🔥', colour: 'sunset' }
+    { id: 'golf',        name: 'Golf',           section: 'Games',   url: GH + 'golf/',         icon: GH + 'golf/icon-180.png',         bar: '#2f6b35', archived: true },
+    { id: 'games-night', name: 'Games Night',    section: 'Games',   url: GAS + 'AKfycbxD-wGuTSZdIHa77KTrXsg8ZexzoElYaNLqgyRa7Cig93h9icQ7MhbDXYHqooYghhxtnQ/exec', icon: GH + 'games-night/icon-180.png', bar: '#08150e', archived: true },
+    { id: 'habit-quest', name: 'Habit Quest',    section: 'Life',    url: '', emoji: '🔥', colour: 'sunset', archived: true }
   ];
-  var SECTIONS = ['Games', 'School', 'Theatre', 'Life'];
+  var SECTIONS = ['Games', 'Life', 'School', 'Theatre'];
   var COLOURS = {
     amber: ['#f6c25b', '#d98a1f'], ocean: ['#36b6e8', '#1a4fa8'], berry: ['#ff7aa8', '#b0307a'], grass: ['#5fd38a', '#1d7a47'],
     violet: ['#a78bff', '#5a3fd6'], sunset: ['#ff9a56', '#e0444f'], slate: ['#7d8aa6', '#3a4560'], night: ['#3b4566', '#151a2b']
@@ -250,7 +250,9 @@
 
   // ---- saved settings (per device) ----
   var KEY = 'gerbers-games:v1';
-  var state = { custom: [], edits: {}, hidden: [], recent: [], order: [], secOrder: [], bubble: { side: 'right', y: 0.72 } };
+  // Starting layout for a fresh phone: the order above, with these tucked away in the Archive.
+  var DEFAULT_ARCHIVED = BUILT_IN.filter(function (a) { return a.archived; }).map(function (a) { return a.id; });
+  var state = { custom: [], edits: {}, hidden: DEFAULT_ARCHIVED.slice(), recent: [], order: [], secOrder: [], bubble: { side: 'right', y: 0.72 } };
   try { var s = JSON.parse(localStorage.getItem(KEY) || 'null'); if (s) for (var k in s) state[k] = s[k]; } catch (e) {}
   // One-off: Arcade² needs your school Google account, which only works when it opens in Safari.
   if (!state.arcadeSafari) {
