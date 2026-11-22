@@ -1,0 +1,101 @@
+<!DOCTYPE html>
+<html lang="en-AU">
+<head>
+  <meta charset="utf-8">
+  <title>6 at 6</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
+  <meta name="description" content="6 at 6: six habits, every morning at 6, for six months.">
+  <meta name="theme-color" content="#0b0b0c">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-title" content="6 at 6">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <meta property="og:title" content="6 at 6">
+  <meta property="og:image" content="icon-512.png">
+  <link rel="apple-touch-icon" href="icon-180.png">
+  <link rel="icon" type="image/png" href="icon-192.png">
+  <link rel="manifest" href="manifest.webmanifest">
+  <style>
+    html, body { margin: 0; height: 100%; overflow: hidden; background: #0b0b0c; }
+    /* The app fills the whole screen, under the clock and the home bar. We tell it how much room those take. */
+    iframe { position: fixed; inset: 0; display: block; width: 100%; height: 100%; border: 0; background: #0b0b0c; }
+    #safe { position: fixed; top: 0; left: 0; visibility: hidden; pointer-events: none;
+      padding: env(safe-area-inset-top, 0px) env(safe-area-inset-right, 0px) env(safe-area-inset-bottom, 0px) env(safe-area-inset-left, 0px); }
+    .ov { position: fixed; inset: 0; background: rgba(0, 0, 0, .7); display: grid; place-items: center; z-index: 10; font-family: -apple-system, system-ui, sans-serif; }
+    .ov[hidden] { display: none; }
+    .ov .card { width: min(88vw, 340px); background: #151517; color: #f5f5f6; border: 1px solid #2a2a2e; border-radius: 24px; padding: 24px 20px 16px; text-align: center; }
+    .ov .t { font-weight: 800; font-size: 22px; letter-spacing: -.02em; margin-bottom: 6px; }
+    .ov .t b { color: #ff7a2f; }
+    .ov p { color: #8b8b93; font-size: 14px; line-height: 1.4; margin: 0 0 18px; }
+    .ov #gbtn { display: flex; justify-content: center; min-height: 44px; }
+    .ov button { margin-top: 12px; background: none; border: 0; color: #ff7a2f; font: 600 15px -apple-system, system-ui, sans-serif; padding: 8px; }
+  </style>
+  <script src="https://accounts.google.com/gsi/client" async></script>
+</head>
+<body>
+  <!-- Home screen wrapper: gives the Apps Script app a proper icon and name on the home screen,
+       and does the Google sign-in, which can't happen inside an Apps Script page. -->
+  <iframe id="app" title="6 at 6" allow="camera; clipboard-write; web-share; fullscreen; screen-wake-lock; autoplay"></iframe>
+  <div id="safe"></div>
+  <div class="ov" id="signin" hidden>
+    <div class="card">
+      <div class="t">6 at <b>6</b></div>
+      <p>Sign in so your habits and progress photos follow you to any phone.</p>
+      <div id="gbtn"></div>
+      <button id="cancel" type="button">Not now</button>
+    </div>
+  </div>
+  <script>
+    var APP = 'https://script.google.com/macros/s/AKfycbx9fIoUEAMeQ-Wxg3S-QLqTzvYnLKUH0IH_knSfX26Pjo3TmnHimGLGXxf2xN0H-5WrHw/exec';
+    if (APP.indexOf('https://script.google.com/') === 0) document.getElementById('app').src = APP + location.search;
+
+    var keep = {
+      get: function (k) { try { return localStorage.getItem(k) || ''; } catch (e) { return ''; } },
+      set: function (k, v) { try { if (v) localStorage.setItem(k, v); else localStorage.removeItem(k); } catch (e) { } }
+    };
+    var FROM = /^https:\/\/([a-z0-9-]+\.)*googleusercontent\.com$/;
+    var app = null, appOrigin = '';
+    var ov = document.getElementById('signin');
+    document.getElementById('cancel').onclick = function () { ov.hidden = true; };
+    function whenGoogle(fn, tries) {
+      if (window.google && google.accounts && google.accounts.id) return fn();
+      if ((tries || 0) > 100) return;
+      setTimeout(function () { whenGoogle(fn, (tries || 0) + 1); }, 100);
+    }
+    function openSignIn(clientId) {
+      ov.hidden = false;
+      whenGoogle(function () {
+        google.accounts.id.initialize({
+          client_id: clientId,
+          callback: function (r) {
+            ov.hidden = true;
+            if (app && r.credential) app.postMessage({ type: 'six-cred', credential: r.credential }, appOrigin);
+          },
+          auto_select: true, itp_support: true, use_fedcm_for_prompt: true
+        });
+        var el = document.getElementById('gbtn');
+        el.innerHTML = '';
+        google.accounts.id.renderButton(el, { theme: 'filled_black', size: 'large', shape: 'pill', text: 'signin_with', width: 260 });
+        google.accounts.id.prompt();
+      });
+    }
+    function safe() {
+      var cs = getComputedStyle(document.getElementById('safe'));
+      return { t: parseFloat(cs.paddingTop) || 0, b: parseFloat(cs.paddingBottom) || 0, l: parseFloat(cs.paddingLeft) || 0, r: parseFloat(cs.paddingRight) || 0,
+        h: window.innerHeight, w: window.innerWidth };
+    }
+    function sendSafe() { if (app) app.postMessage({ type: 'six-safe', safe: safe() }, appOrigin); }
+    window.addEventListener('resize', function () { setTimeout(sendSafe, 120); });
+    window.addEventListener('orientationchange', function () { setTimeout(sendSafe, 300); });
+    window.addEventListener('message', function (e) {
+      if (!FROM.test(e.origin)) return;
+      var d = e.data || {};
+      app = e.source; appOrigin = e.origin;
+      if (d.type === 'six-hello') app.postMessage({ type: 'six-wrapper', safe: safe(), session: keep.get('six_session') }, appOrigin);
+      if (d.type === 'six-keep') keep.set('six_session', d.session || '');
+      if (d.type === 'six-signin' && d.clientId) openSignIn(d.clientId);
+      if (d.type === 'six-signout') { keep.set('six_session', ''); whenGoogle(function () { google.accounts.id.disableAutoSelect(); }); }
+    });
+  </script>
+</body>
+</html>

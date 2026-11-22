@@ -219,7 +219,7 @@
 
 <script>
 (function () {
-  var HUB_VERSION = '2026-11-16a';   // change this whenever the hub is updated, so open copies offer the update
+  var HUB_VERSION = '2026-11-22a';   // change this whenever the hub is updated, so open copies offer the update
   var GH = 'https://bengerberr.github.io/';
   var GAS = 'https://script.google.com/macros/s/';
 
@@ -237,6 +237,7 @@
     { id: 'stagescript', name: 'Stagescript',    section: 'Theatre', url: GH + 'stagescript/',  icon: GH + 'stagescript/icon-180.png',  bar: '#141414' },
     { id: 'cricket-360', name: 'Cricket 360',    section: 'Life',    url: GAS + 'AKfycby20fqiT6-jVdXuc28KaERGhaJaD2cyxx-njk3704gMMsh3AdWCmFA77-uW58mln-ae/exec', emoji: '🏏', colour: 'grass', bar: '#0b2d1f' },
     { id: 'gerber-pay',  name: 'Gerber Pay',     section: 'Life',    url: GH + 'gerber-pay/',   icon: GH + 'gerber-pay/icon-180.png',   bar: '#1f3a2e' },
+    { id: 'six-at-six',  name: '6 at 6',         section: 'Life',    url: GH + 'six-at-six/',   icon: GH + 'six-at-six/icon-180.png',   bar: '#0b0b0c' },
     { id: 'habit-quest', name: 'Habit Quest',    section: 'Life',    url: '', emoji: '🔥', colour: 'sunset' }
   ];
   var SECTIONS = ['Games', 'Theatre', 'Life'];
@@ -352,7 +353,7 @@
       if (f) f.remove();
       f = document.createElement('iframe');
       f.title = a.name;
-      f.allow = 'clipboard-read; clipboard-write; web-share; fullscreen; autoplay; identity-credentials-get';
+      f.allow = 'clipboard-read; clipboard-write; web-share; fullscreen; autoplay; identity-credentials-get; camera; screen-wake-lock';
       f.dataset.url = a.url;
       $('loading').classList.add('on');
       f.onload = function () { if (current === id) $('loading').classList.remove('on'); tellSafe(f); readColour(id, f); };
