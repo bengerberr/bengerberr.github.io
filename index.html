@@ -219,7 +219,7 @@
 
 <script>
 (function () {
-  var HUB_VERSION = '2026-11-23b';   // change this whenever the hub is updated, so open copies offer the update
+  var HUB_VERSION = '2026-11-23c';   // change this whenever the hub is updated, so open copies offer the update
   var GH = 'https://bengerberr.github.io/';
   var GAS = 'https://script.google.com/macros/s/';
 
@@ -274,11 +274,11 @@
 
   // ---- one layout everywhere ----
   // Order, sections, archive, names, icons and added apps live online, so every phone shows the same hub.
-  // Saving needs the hub PIN (asked once per phone). Things that stay per phone: recent apps, where the
+  // Any change saves straight away, no PIN. Things that stay per phone: recent apps, where the
   // home button sits, the Archive open or shut, and any Google account email (that's kept off the internet).
   var SYNC_URL = 'https://script.google.com/macros/s/AKfycbyP7FLRNnDKijsc8uB2BOd-oo7bfnD0KoHO7EDmfarj2dpnzE1cCdSJLphc1peJRu_xZg/exec';
   var LAYOUT_KEYS = ['custom', 'edits', 'hidden', 'order', 'secOrder'];
-  var pushT = null, pushing = false, pending = false, pinAsked = false;
+  var pushT = null, pushing = false, pending = false;
   function layoutOf() {
     var l = JSON.parse(JSON.stringify(LAYOUT_KEYS.reduce(function (o, k) { o[k] = state[k]; return o; }, {})));
     for (var id in l.edits) delete l.edits[id].domain;
@@ -293,17 +293,13 @@
   }
   function push() {
     if (!pending || pushing) return;
-    if (!state.pin) { if (!pinAsked) { pinAsked = true; askPin(push); } return; }
     pushing = true;
-    fetch(SYNC_URL, { method: 'POST', headers: { 'Content-Type': 'text/plain;charset=utf-8' }, body: JSON.stringify({ pin: state.pin, layout: layoutOf() }) })
+    fetch(SYNC_URL, { method: 'POST', headers: { 'Content-Type': 'text/plain;charset=utf-8' }, body: JSON.stringify({ layout: layoutOf() }) })
       .then(function (res) { return res.json(); })
       .then(function (res) {
         pushing = false;
         if (res.ok) {
           pending = false; state.syncedAt = res.updated; store();
-          if (res.firstPin) toast('PIN set. This layout now shows on every phone');
-        } else if (res.error === 'pin') {
-          state.pin = null; store(); pinAsked = true; askPin(push, true);
         } else toast("Couldn't save the layout online (" + res.error + ')');
       })
       .catch(function () { pushing = false; });   // offline: tries again next time you open the hub
@@ -315,10 +311,7 @@
     if (!/^https:/.test(SYNC_URL) || !window.fetch) return;
     fetch(SYNC_URL + '?t=' + Date.now(), { cache: 'no-store' }).then(function (res) { return res.json(); }).then(function (res) {
       if (!res || !res.ok) return;
-      if (!res.layout) {   // nothing online yet: offer this phone's layout
-        if (state.order.length || state.hidden.length) toast('Tap to use this layout on all your phones', function () { $('toast').classList.remove('on'); pending = true; pinAsked = true; state.pin ? push() : askPin(push); });
-        return;
-      }
+      if (!res.layout) { pending = true; push(); return; }   // nothing online yet: this phone's layout becomes the one
       if (pending || dragApp || res.updated <= (state.syncedAt || 0)) { if (pending) push(); return; }
       var domains = {};
       for (var id in state.edits) if (state.edits[id].domain) domains[id] = state.edits[id].domain;
@@ -334,21 +327,7 @@
       if (!$('sheet').classList.contains('on')) render();
     }).catch(function () {});
   }
-  function askPin(then, wrong) {
-    $('sheet').innerHTML = '<div class="grab"></div><h3>' + (wrong ? 'That PIN didn\'t match' : 'Save the layout everywhere') + '</h3>' +
-      '<p class="note">Enter the Gerber\'s Games PIN so this change shows on every phone. You only do this once on each phone. ' +
-      'The very first time, the PIN you type here becomes the PIN.</p>' +
-      '<label>PIN (4 to 8 numbers)</label><input id="fPin" type="password" inputmode="numeric" pattern="[0-9]*" maxlength="8" autocomplete="off">' +
-      '<div class="actions"><button class="btn" id="pinSkip">This phone only</button><button class="btn primary" id="pinOk">Save</button></div>';
-    $('pinSkip').onclick = function () { closeSheet(); toast('Saved on this phone only'); };
-    $('pinOk').onclick = function () {
-      var v = $('fPin').value.trim();
-      if (!/^\d{4,8}$/.test(v)) { $('fPin').focus(); return; }
-      state.pin = v; store(); closeSheet(); pending = true; then();
-    };
-    $('veil').classList.add('on'); $('sheet').classList.add('on');
-    setTimeout(function () { $('fPin').focus(); }, 300);
-  }
+
 
   function apps() {
     var list = BUILT_IN.map(function (a) { return Object.assign({}, a, state.edits[a.id] || {}); })
